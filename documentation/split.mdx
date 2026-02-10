@@ -1,0 +1,129 @@
+---
+title: "Split"
+description: "Split documents into logical sections based on category descriptions."
+---
+
+## Overview
+
+The Split endpoint divides a document into logical sections based on categories you define. Ideal for separating multi-section documents like contracts, reports, or bundled document packages.
+
+**Credits:** 1 credit per page
+
+## Basic Usage
+
+<CodeGroup>
+
+```bash cURL
+curl -X POST "https://platform.aifano.com/split" \
+  -H "Authorization: Bearer $AIFANO_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "input": "aifano://contract-bundle.pdf",
+    "split_description": [
+      { "title": "Cover Letter", "description": "The introductory cover letter" },
+      { "title": "Terms and Conditions", "description": "Legal terms and clauses" },
+      { "title": "Appendix", "description": "Supplementary materials and exhibits" }
+    ]
+  }'
+```
+
+```python Python
+import requests
+
+result = requests.post(
+    "https://platform.aifano.com/split",
+    headers={"Authorization": f"Bearer {AIFANO_API_KEY}"},
+    json={
+        "input": "aifano://contract-bundle.pdf",
+        "split_description": [
+            {"title": "Cover Letter", "description": "Introductory cover letter"},
+            {"title": "Terms and Conditions", "description": "Legal terms and clauses"},
+            {"title": "Appendix", "description": "Supplementary materials"}
+        ]
+    }
+).json()
+
+for section in result["result"]:
+    print(f"{section['category']}: pages {section['page_range']['start']}-{section['page_range']['end']}")
+```
+
+</CodeGroup>
+
+## Response
+
+```json
+{
+  "job_id": "job_split_001",
+  "duration": 5.12,
+  "usage": { "num_pages": 25, "credits": 25 },
+  "result": [
+    {
+      "category": "Cover Letter",
+      "page_range": { "start": 1, "end": 2 },
+      "content": "Dear Client,\n\nPlease find enclosed..."
+    },
+    {
+      "category": "Terms and Conditions",
+      "page_range": { "start": 3, "end": 18 },
+      "content": "1. Definitions\n\n1.1 Agreement means..."
+    },
+    {
+      "category": "Appendix",
+      "page_range": { "start": 19, "end": 25 },
+      "content": "Exhibit A: Pricing Schedule..."
+    }
+  ]
+}
+```
+
+## Split Rules
+
+Customize how the document is divided:
+
+```json
+{
+  "input": "aifano://document.pdf",
+  "split_description": ["..."],
+  "split_rules": "Each section must be non-overlapping. Include all pages of a section."
+}
+```
+
+Default: *"Split the document into the applicable sections. Sections may only overlap at their first and last page if at all."*
+
+## Configuration
+
+### Parsing Options
+
+```json
+{
+  "input": "aifano://document.pdf",
+  "split_description": ["..."],
+  "parsing": {
+    "settings": { "ocr_system": "standard" },
+    "enhance": { "agentic": [{ "scope": "table" }] }
+  }
+}
+```
+
+### Split Settings
+
+| Setting | Options | Description |
+|---------|---------|-------------|
+| `table_cutoff` | `truncate`, `split` | How to handle tables spanning section boundaries |
+
+## Common Use Cases
+
+<CardGroup cols={2}>
+  <Card title="Contract Packages" icon="file-contract">
+    Split bundled contracts into individual agreements, amendments, and exhibits.
+  </Card>
+  <Card title="Financial Reports" icon="chart-line">
+    Separate annual reports into income statement, balance sheet, and notes.
+  </Card>
+  <Card title="Insurance Claims" icon="shield">
+    Divide claim packages into application, supporting documents, and correspondence.
+  </Card>
+  <Card title="Medical Records" icon="notes-medical">
+    Split patient files into visit notes, lab results, and imaging reports.
+  </Card>
+</CardGroup>

@@ -1,0 +1,178 @@
+---
+title: "Response Format"
+description: "Understand the structure of Aifano API responses — chunks, blocks, bounding boxes, and metadata."
+---
+
+## Overview
+
+All Aifano processing endpoints return structured JSON with a consistent format. The core building blocks are **chunks** (logical sections of content) and **blocks** (individual elements like text, tables, and figures).
+
+## Parse Response
+
+```json
+{
+  "job_id": "job_abc123",
+  "duration": 2.34,
+  "usage": {
+    "num_pages": 5,
+    "credits": 5
+  },
+  "result": {
+    "type": "full",
+    "chunks": [
+      {
+        "content": "# Introduction\n\nThis document covers...",
+        "embed": "Introduction. This document covers...",
+        "blocks": [
+          {
+            "type": "Title",
+            "content": "Introduction",
+            "bbox": { "left": 0.1, "top": 0.05, "width": 0.8, "height": 0.04, "page": 1 }
+          },
+          {
+            "type": "Text",
+            "content": "This document covers...",
+            "bbox": { "left": 0.1, "top": 0.1, "width": 0.8, "height": 0.06, "page": 1 }
+          }
+        ]
+      }
+    ]
+  }
+}
+```
+
+## Top-Level Fields
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `job_id` | `string` | Unique identifier for this processing job |
+| `duration` | `number` | Processing time in seconds |
+| `usage` | `object` | Credit and page usage information |
+| `result` | `object` | The processing result containing chunks |
+
+## Chunks
+
+Chunks are logical sections of the document. Each chunk contains:
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `content` | `string` | Markdown-formatted content of the section |
+| `embed` | `string` | Embedding-optimized plain text (ideal for RAG) |
+| `blocks` | `array` | Individual elements with bounding boxes |
+
+## Blocks
+
+Blocks are the atomic elements within a chunk. Each block has:
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `type` | `string` | The block type (see table below) |
+| `content` | `string` | The text or data content |
+| `bbox` | `object` | Bounding box coordinates |
+
+### Block Types
+
+| Type | Description |
+|------|-------------|
+| `Title` | Document or section title |
+| `Section Header` | Sub-section heading |
+| `Text` | Body text paragraph |
+| `Table` | Tabular data (Markdown format) |
+| `Figure` | Image or chart |
+| `List Item` | Bulleted or numbered list item |
+| `Header` | Page header |
+| `Footer` | Page footer |
+| `Page Number` | Page number |
+| `Key Value` | Key-value pair |
+| `Comment` | Annotation or comment |
+| `Signature` | Signature block |
+
+## Bounding Boxes
+
+All coordinates are **normalized** (0.0 to 1.0) relative to the page dimensions:
+
+```json
+{
+  "left": 0.1,
+  "top": 0.05,
+  "width": 0.8,
+  "height": 0.04,
+  "page": 1
+}
+```
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `left` | `number` | Left edge (0.0 = left margin, 1.0 = right margin) |
+| `top` | `number` | Top edge (0.0 = top, 1.0 = bottom) |
+| `width` | `number` | Width as fraction of page width |
+| `height` | `number` | Height as fraction of page height |
+| `page` | `integer` | 1-based page number |
+
+## Usage Object
+
+```json
+{
+  "num_pages": 5,
+  "credits": 5
+}
+```
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `num_pages` | `integer` | Number of pages processed |
+| `credits` | `integer` | Credits consumed for this operation |
+
+## Extract Response
+
+Extract responses include the parsed data plus extracted fields:
+
+```json
+{
+  "job_id": "job_ext456",
+  "duration": 3.21,
+  "usage": { "num_pages": 2, "credits": 4 },
+  "result": {
+    "invoice_number": "INV-2024-001",
+    "date": "2024-01-15",
+    "total_amount": 1250.00,
+    "line_items": [
+      { "description": "Consulting", "quantity": 10, "unit_price": 125.00 }
+    ]
+  }
+}
+```
+
+The `result` matches the JSON schema you provided in the request.
+
+## Split Response
+
+Split responses contain an array of categorized sections:
+
+```json
+{
+  "job_id": "job_split789",
+  "duration": 5.12,
+  "usage": { "num_pages": 25, "credits": 25 },
+  "result": [
+    {
+      "category": "Cover Letter",
+      "page_range": { "start": 1, "end": 2 },
+      "content": "Dear Client,\n\nPlease find enclosed..."
+    }
+  ]
+}
+```
+
+## Edit Response
+
+Edit responses return a download URL for the modified document:
+
+```json
+{
+  "document_url": "https://platform.aifano.com/download/edited.pdf?token=...",
+  "form_schema": [...],
+  "usage": { "num_pages": 2, "credits": 8 }
+}
+```
+

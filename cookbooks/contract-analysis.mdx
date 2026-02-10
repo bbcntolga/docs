@@ -1,0 +1,176 @@
+---
+title: "Contract Analysis"
+description: "Parse contracts, extract key clauses, dates, parties, and obligations using Aifano."
+---
+
+## Overview
+
+This cookbook demonstrates how to analyze contracts using Aifano's Parse and Extract endpoints. You'll learn to extract parties, dates, key clauses, and obligations from legal documents — turning dense PDFs into structured, queryable data.
+
+## What You'll Build
+
+A workflow that:
+1. Parses a contract into structured sections
+2. Extracts key metadata (parties, dates, terms)
+3. Identifies specific clauses (termination, liability, confidentiality)
+
+## Step 1: Parse the Contract
+
+First, parse the contract to get the full text with section structure:
+
+<CodeGroup>
+
+```python Python
+import requests
+
+AIFANO_API_KEY = "ak_live_your_key_here"
+BASE_URL = "https://platform.aifano.com"
+
+# Parse the contract
+parse_result = requests.post(
+    f"{BASE_URL}/parse",
+    headers={"Authorization": f"Bearer {AIFANO_API_KEY}"},
+    json={"input": "aifano://service-agreement.pdf"}
+).json()
+
+# Print section headers
+for chunk in parse_result["result"]["chunks"]:
+    for block in chunk["blocks"]:
+        if block["type"] in ("Title", "Section Header"):
+            print(f"  [{block['type']}] {block['content']}")
+```
+
+```javascript JavaScript
+const AIFANO_API_KEY = "ak_live_your_key_here";
+const BASE_URL = "https://platform.aifano.com";
+
+const parseResult = await fetch(`${BASE_URL}/parse`, {
+  method: "POST",
+  headers: {
+    "Authorization": `Bearer ${AIFANO_API_KEY}`,
+    "Content-Type": "application/json"
+  },
+  body: JSON.stringify({ input: "aifano://service-agreement.pdf" })
+}).then(r => r.json());
+
+parseResult.result.chunks.forEach(chunk => {
+  chunk.blocks
+    .filter(b => ["Title", "Section Header"].includes(b.type))
+    .forEach(b => console.log(`  [${b.type}] ${b.content}`));
+});
+```
+
+</CodeGroup>
+
+## Step 2: Extract Key Contract Data
+
+Use the job reference from Step 1 to extract structured data without re-parsing:
+
+```python Python
+schema = {
+    "type": "object",
+    "properties": {
+        "contract_title": {"type": "string"},
+        "effective_date": {"type": "string", "description": "YYYY-MM-DD format"},
+        "expiration_date": {"type": "string", "description": "YYYY-MM-DD format"},
+        "parties": {
+            "type": "array",
+            "items": {
+                "type": "object",
+                "properties": {
+                    "name": {"type": "string"},
+                    "role": {"type": "string", "description": "e.g., Client, Provider, Vendor"},
+                    "address": {"type": "string"}
+                }
+            }
+        },
+        "contract_value": {"type": "number", "description": "Total contract value"},
+        "currency": {"type": "string"},
+        "payment_terms": {"type": "string"},
+        "termination_clause": {"type": "string", "description": "Summary of termination conditions"},
+        "liability_cap": {"type": "string", "description": "Maximum liability amount or terms"},
+        "confidentiality": {"type": "boolean", "description": "Whether an NDA/confidentiality clause exists"},
+        "governing_law": {"type": "string", "description": "Jurisdiction or governing law"},
+        "renewal_terms": {"type": "string", "description": "Auto-renewal or renewal conditions"}
+    }
+}
+
+# Use jobid:// to skip re-parsing (saves credits!)
+job_id = parse_result["job_id"]
+extract_result = requests.post(
+    f"{BASE_URL}/extract",
+    headers={"Authorization": f"Bearer {AIFANO_API_KEY}"},
+    json={
+        "input": f"jobid://{job_id}",
+        "schema": schema,
+        "system_prompt": "Extract all contract metadata. Summarize clauses concisely. Use YYYY-MM-DD for dates."
+    }
+).json()
+
+import json
+print(json.dumps(extract_result["result"], indent=2))
+```
+
+## Step 3: Example Output
+
+```json
+{
+  "contract_title": "Master Service Agreement",
+  "effective_date": "2024-01-01",
+  "expiration_date": "2025-12-31",
+  "parties": [
+    { "name": "Acme Corp", "role": "Client", "address": "Berlin, Germany" },
+    { "name": "TechServ GmbH", "role": "Provider", "address": "Munich, Germany" }
+  ],
+  "contract_value": 120000,
+  "currency": "EUR",
+  "payment_terms": "Net 30 days from invoice date",
+  "termination_clause": "Either party may terminate with 90 days written notice. Immediate termination for material breach.",
+  "liability_cap": "Limited to 12 months of fees paid",
+  "confidentiality": true,
+  "governing_law": "German law, courts of Berlin",
+  "renewal_terms": "Auto-renews for 1-year periods unless terminated 90 days prior"
+}
+```
+
+## Step 4: Split Multi-Section Contracts
+
+For contracts with multiple sections (e.g., MSA + SOW + NDA), use Split first:
+
+```python Python
+split_result = requests.post(
+    f"{BASE_URL}/split",
+    headers={"Authorization": f"Bearer {AIFANO_API_KEY}"},
+    json={
+        "input": "aifano://contract-bundle.pdf",
+        "split_description": [
+            {"title": "Master Service Agreement", "description": "The main service agreement"},
+            {"title": "Statement of Work", "description": "Scope, deliverables, and timeline"},
+            {"title": "Non-Disclosure Agreement", "description": "Confidentiality terms"}
+        ]
+    }
+).json()
+
+for section in split_result["result"]:
+    print(f"Section: {section['category']} (pages {section['page_range']['start']}-{section['page_range']['end']})")
+```
+
+## Tips
+
+<AccordionGroup>
+  <Accordion title="Use jobid:// to save credits">
+    Parse once, then extract multiple times with different schemas using `jobid://`. This avoids re-parsing and saves 1 credit per page each time.
+  </Accordion>
+  <Accordion title="Be specific in your schema descriptions">
+    Add `description` fields to guide extraction. For example, specify date formats, currency expectations, or what constitutes a "termination clause."
+  </Accordion>
+  <Accordion title="Combine Split + Extract for bundled contracts">
+    Split the document first to identify sections, then extract from each section individually for more accurate results.
+  </Accordion>
+</AccordionGroup>
+
+## Next Steps
+
+- [Invoice Processing](/cookbooks/invoice-processing) — Extract financial data from invoices
+- [Multi-Document Pipelines](/cookbooks/multi-document-pipelines) — Build automated document workflows
+

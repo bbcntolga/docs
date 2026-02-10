@@ -1,0 +1,214 @@
+---
+title: "Invoice Processing"
+description: "Extract structured data from invoices — line items, totals, vendor details, and payment terms."
+---
+
+## Overview
+
+This cookbook shows how to extract structured data from invoices using the Aifano `/extract` endpoint. You'll define a JSON schema for the data you need, and Aifano will extract it from any invoice format — PDF, scanned image, or digital document.
+
+## What You'll Build
+
+A script that:
+
+1. Uploads an invoice to Aifano
+2. Extracts vendor info, line items, totals, and payment terms
+3. Returns clean, structured JSON ready for your accounting system
+
+## Step 1: Define the Extraction Schema
+
+Create a JSON schema that describes the data you want to extract:
+
+```json
+{
+  "type": "object",
+  "properties": {
+    "invoice_number": {
+      "type": "string",
+      "description": "The invoice number or ID"
+    },
+    "invoice_date": {
+      "type": "string",
+      "description": "Invoice date in YYYY-MM-DD format"
+    },
+    "due_date": {
+      "type": "string",
+      "description": "Payment due date in YYYY-MM-DD format"
+    },
+    "vendor": {
+      "type": "object",
+      "properties": {
+        "name": { "type": "string" },
+        "address": { "type": "string" },
+        "tax_id": { "type": "string" }
+      }
+    },
+    "line_items": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "description": { "type": "string" },
+          "quantity": { "type": "number" },
+          "unit_price": { "type": "number" },
+          "total": { "type": "number" }
+        }
+      }
+    },
+    "subtotal": { "type": "number" },
+    "tax": { "type": "number" },
+    "total": { "type": "number" },
+    "currency": { "type": "string" }
+  }
+}
+```
+
+## Step 2: Extract Data from an Invoice
+
+<CodeGroup>
+
+```python Python
+import requests
+import json
+
+AIFANO_API_KEY = "ak_live_your_key_here"
+BASE_URL = "https://platform.aifano.com"
+
+# Define the extraction schema
+schema = {
+    "type": "object",
+    "properties": {
+        "invoice_number": {"type": "string", "description": "Invoice number"},
+        "invoice_date": {"type": "string", "description": "Date in YYYY-MM-DD"},
+        "vendor": {
+            "type": "object",
+            "properties": {
+                "name": {"type": "string"},
+                "address": {"type": "string"}
+            }
+        },
+        "line_items": {
+            "type": "array",
+            "items": {
+                "type": "object",
+                "properties": {
+                    "description": {"type": "string"},
+                    "quantity": {"type": "number"},
+                    "unit_price": {"type": "number"},
+                    "total": {"type": "number"}
+                }
+            }
+        },
+        "subtotal": {"type": "number"},
+        "tax": {"type": "number"},
+        "total": {"type": "number"},
+        "currency": {"type": "string"}
+    }
+}
+
+# Extract data
+result = requests.post(
+    f"{BASE_URL}/extract",
+    headers={"Authorization": f"Bearer {AIFANO_API_KEY}"},
+    json={
+        "input": "https://example.com/invoice.pdf",
+        "schema": schema,
+        "system_prompt": "Extract all invoice data. Use YYYY-MM-DD for dates. Use the document currency."
+    }
+).json()
+
+print(json.dumps(result["result"], indent=2))
+```
+
+````javascript JavaScript
+const AIFANO_API_KEY = "ak_live_your_key_here";
+const BASE_URL = "https://platform.aifano.com";
+
+const schema = {
+  type: "object",
+  properties: {
+    invoice_number: { type: "string" },
+    invoice_date: { type: "string" },
+    vendor: {
+      type: "object",
+      properties: {
+        name: { type: "string" },
+        address: { type: "string" }
+      }
+    },
+    line_items: {
+      type: "array",
+      items: {
+        type: "object",
+        properties: {
+          description: { type: "string" },
+          quantity: { type: "number" },
+          unit_price: { type: "number" },
+          total: { type: "number" }
+        }
+      }
+    },
+    subtotal: { type: "number" },
+
+## Step 4: Batch Processing Multiple Invoices
+
+For processing multiple invoices, use async endpoints to maximize throughput:
+
+```python Python
+import time
+
+invoice_urls = [
+    "aifano://invoice-001.pdf",
+    "aifano://invoice-002.pdf",
+    "aifano://invoice-003.pdf",
+]
+
+# Submit all jobs
+jobs = []
+for url in invoice_urls:
+    job = requests.post(
+        f"{BASE_URL}/extract_async",
+        headers={"Authorization": f"Bearer {AIFANO_API_KEY}"},
+        json={"input": url, "schema": schema}
+    ).json()
+    jobs.append(job["job_id"])
+    print(f"Submitted: {job['job_id']}")
+
+# Poll for results
+results = []
+for job_id in jobs:
+    while True:
+        status = requests.get(
+            f"{BASE_URL}/job/{job_id}",
+            headers={"Authorization": f"Bearer {AIFANO_API_KEY}"}
+        ).json()
+
+        if status["status"] in ("COMPLETED", "FAILED"):
+            results.append(status)
+            break
+        time.sleep(2)
+
+print(f"Processed {len(results)} invoices")
+````
+
+## Tips
+
+<AccordionGroup>
+  <Accordion title="Use system_prompt for better accuracy">
+    Add context like currency format, date format, or language to the
+    `system_prompt` to improve extraction accuracy.
+  </Accordion>
+  <Accordion title="Reuse parsed results with jobid://">
+    If you need to extract different fields from the same invoice, use
+    `jobid://` to skip re-parsing and save credits.
+  </Accordion>
+  <Accordion title="Handle missing fields gracefully">
+    Not all invoices have every field. Check for `null` values in the response
+    and handle them in your application logic.
+  </Accordion>
+</AccordionGroup>
+
+## Next Steps
+
+- [Contract Analysis](/cookbooks/contract-analysis) — Extract clauses and terms from legal documents
+- [Multi-Document Pipelines](/cookbooks/multi-document-pipelines) — Process bundled document packages

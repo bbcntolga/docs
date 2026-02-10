@@ -1,0 +1,184 @@
+---
+title: "Pipelines"
+description: "Combine parsing, extraction, splitting, and editing into reusable, single-call workflows."
+---
+
+## Overview
+
+Pipelines let you chain multiple Aifano operations into a single API call. Instead of calling `/parse`, then `/extract` separately, define a pipeline once and run it with one request.
+
+## How Pipelines Work
+
+A pipeline is a sequence of processors that execute in order:
+
+<Steps>
+  <Step title="Define Processors">
+    Choose which operations to include: Parse, Extract, Split, or Edit. Each processor has its own configuration.
+  </Step>
+  <Step title="Upload Documents">
+    Add documents to the pipeline via the Studio UI or the API.
+  </Step>
+  <Step title="Execute">
+    Call `/pipeline` (sync) or `/pipeline_async` (async) to run all processors in sequence on your document.
+  </Step>
+  <Step title="Get Results">
+    Receive combined results from all processors in a single response.
+  </Step>
+</Steps>
+
+## Pipeline Types
+
+Pipelines are defined by the combination of processors they include:
+
+| Type | Processors | Description |
+|------|-----------|-------------|
+| `parse` | Parse | Parse documents into structured JSON |
+| `extract` | Parse → Extract | Parse and extract structured data |
+| `split` | Split | Split documents into sections |
+| `parse_extract` | Parse → Extract | Full parsing with data extraction |
+| `parse_split` | Parse → Split | Parse and split into sections |
+| `split_extract` | Split → Extract | Split sections and extract data |
+| `parse_split_extract` | Parse → Split → Extract | Full pipeline with all operations |
+
+## Basic Usage
+
+<CodeGroup>
+
+```bash cURL
+curl -X POST "https://platform.aifano.com/pipeline" \
+  -H "Authorization: Bearer $AIFANO_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "input": "aifano://invoice-bundle.pdf",
+    "pipeline_id": "pipe_abc123"
+  }'
+```
+
+```python Python
+import requests
+
+result = requests.post(
+    "https://platform.aifano.com/pipeline",
+    headers={"Authorization": f"Bearer {AIFANO_API_KEY}"},
+    json={
+        "input": "aifano://invoice-bundle.pdf",
+        "pipeline_id": "pipe_abc123"
+    }
+).json()
+
+print(f"Pipeline completed in {result['duration']}s")
+```
+
+```javascript JavaScript
+const response = await fetch("https://platform.aifano.com/pipeline", {
+  method: "POST",
+  headers: {
+    "Authorization": `Bearer ${AIFANO_API_KEY}`,
+    "Content-Type": "application/json"
+  },
+  body: JSON.stringify({
+    input: "aifano://invoice-bundle.pdf",
+    pipeline_id: "pipe_abc123"
+  })
+});
+
+const result = await response.json();
+```
+
+</CodeGroup>
+
+## Creating Pipelines in Studio
+
+The easiest way to create and manage pipelines is through the [Aifano Studio](https://studio.aifano.com):
+
+1. Navigate to **Pipelines** in the sidebar
+2. Click **Create Pipeline**
+3. Choose a name, description, and pipeline type
+4. Configure each processor's settings
+5. Upload documents and run the pipeline
+
+## Processor Configuration
+
+Each processor in a pipeline can be individually configured:
+
+### Parse Processor
+
+Controls how documents are parsed into structured content.
+
+```json
+{
+  "parser_provider": "reducto",
+  "enhance": {
+    "agentic": [{ "scope": "table" }],
+    "summarize_figures": true
+  },
+  "settings": {
+    "ocr_system": "standard",
+    "extraction_mode": "hybrid"
+  }
+}
+```
+
+### Extract Processor
+
+Defines the schema for structured data extraction.
+
+```json
+{
+  "schema": {
+    "type": "object",
+    "properties": {
+      "invoice_number": { "type": "string" },
+      "total": { "type": "number" }
+    }
+  },
+  "system_prompt": "Extract all monetary values in EUR."
+}
+```
+
+### Split Processor
+
+Configures how documents are divided into sections.
+
+```json
+{
+  "split_description": [
+    { "title": "Invoice", "description": "The main invoice document" },
+    { "title": "Receipt", "description": "Payment receipt or confirmation" }
+  ]
+}
+```
+
+## Async Pipelines
+
+For large documents or batch processing, use the async variant:
+
+```bash
+curl -X POST "https://platform.aifano.com/pipeline_async" \
+  -H "Authorization: Bearer $AIFANO_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "input": "aifano://large-document.pdf",
+    "pipeline_id": "pipe_abc123"
+  }'
+```
+
+See [Async Processing](/documentation/async-processing) for details on polling and webhooks.
+
+## Common Use Cases
+
+<CardGroup cols={2}>
+  <Card title="Invoice Processing" icon="file-invoice-dollar">
+    Parse invoices, extract line items and totals, and split bundled documents — all in one call.
+  </Card>
+  <Card title="Contract Review" icon="file-contract">
+    Split contract packages into sections, parse each section, and extract key terms and dates.
+  </Card>
+  <Card title="Claims Processing" icon="shield-check">
+    Split claim packages, extract policyholder data, and route sections to the right department.
+  </Card>
+  <Card title="Document Intake" icon="inbox">
+    Automatically classify, split, and extract data from mixed document uploads.
+  </Card>
+</CardGroup>
+

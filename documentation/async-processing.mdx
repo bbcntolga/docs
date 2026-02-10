@@ -1,0 +1,170 @@
+---
+title: "Async Processing"
+description: "Process large documents asynchronously with job polling and webhook notifications."
+---
+
+## Overview
+
+Every Aifano endpoint has an async variant (`/parse_async`, `/extract_async`, `/split_async`, `/edit_async`, `/pipeline_async`). Async endpoints return a `job_id` immediately, and you poll for results or receive them via webhook.
+
+Use async processing when:
+- Documents are large (50+ pages)
+- You're processing batches of documents
+- You don't need results immediately
+- You want to avoid request timeouts
+
+## Submitting an Async Job
+
+Add `_async` to any endpoint:
+
+<CodeGroup>
+
+```bash cURL
+curl -X POST "https://platform.aifano.com/parse_async" \
+  -H "Authorization: Bearer $AIFANO_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{"input": "aifano://large-report.pdf"}'
+```
+
+```python Python
+import requests
+
+job = requests.post(
+    "https://platform.aifano.com/parse_async",
+    headers={"Authorization": f"Bearer {AIFANO_API_KEY}"},
+    json={"input": "aifano://large-report.pdf"}
+).json()
+
+print(f"Job submitted: {job['job_id']}")
+```
+
+```javascript JavaScript
+const job = await fetch("https://platform.aifano.com/parse_async", {
+  method: "POST",
+  headers: {
+    "Authorization": `Bearer ${AIFANO_API_KEY}`,
+    "Content-Type": "application/json"
+  },
+  body: JSON.stringify({ input: "aifano://large-report.pdf" })
+}).then(r => r.json());
+
+console.log(`Job submitted: ${job.job_id}`);
+```
+
+</CodeGroup>
+
+### Response
+
+```json
+{
+  "job_id": "job_a1b2c3d4e5f6"
+}
+```
+
+## Polling for Results
+
+Use `GET /job/{job_id}` to check the status:
+
+<CodeGroup>
+
+```bash cURL
+curl "https://platform.aifano.com/job/job_a1b2c3d4e5f6" \
+  -H "Authorization: Bearer $AIFANO_API_KEY"
+```
+
+```python Python
+import time
+
+while True:
+    status = requests.get(
+        f"https://platform.aifano.com/job/{job['job_id']}",
+        headers={"Authorization": f"Bearer {AIFANO_API_KEY}"}
+    ).json()
+
+    if status["status"] in ("COMPLETED", "FAILED"):
+        break
+
+    print(f"Status: {status['status']}...")
+    time.sleep(2)
+
+if status["status"] == "COMPLETED":
+    result = status["result"]
+```
+
+```javascript JavaScript
+async function pollJob(jobId) {
+  while (true) {
+    const status = await fetch(
+      `https://platform.aifano.com/job/${jobId}`,
+      { headers: { "Authorization": `Bearer ${AIFANO_API_KEY}` } }
+    ).then(r => r.json());
+
+    if (status.status === "COMPLETED" || status.status === "FAILED") {
+      return status;
+    }
+
+    await new Promise(r => setTimeout(r, 2000));
+  }
+}
+```
+
+</CodeGroup>
+
+### Job Statuses
+
+| Status | Description |
+|--------|-------------|
+| `PENDING` | Job is queued and waiting to be processed |
+| `RUNNING` | Job is currently being processed |
+| `COMPLETED` | Job finished successfully — results are available |
+| `FAILED` | Job failed — check the `error` field for details |
+
+### Completed Job Response
+
+```json
+{
+  "job_id": "job_a1b2c3d4e5f6",
+  "status": "COMPLETED",
+  "result": {
+    "type": "full",
+    "chunks": [...]
+  }
+}
+```
+
+## Cancelling a Job
+
+Cancel a running or pending job:
+
+```bash
+curl -X POST "https://platform.aifano.com/cancel/job_a1b2c3d4e5f6" \
+  -H "Authorization: Bearer $AIFANO_API_KEY"
+```
+
+## Async Endpoints
+
+| Sync Endpoint | Async Endpoint | Description |
+|--------------|----------------|-------------|
+| `POST /parse` | `POST /parse_async` | Document parsing |
+| `POST /extract` | `POST /extract_async` | Data extraction |
+| `POST /split` | `POST /split_async` | Document splitting |
+| `POST /edit` | `POST /edit_async` | Document editing |
+| `POST /pipeline` | `POST /pipeline_async` | Pipeline execution |
+
+## Best Practices
+
+<AccordionGroup>
+  <Accordion title="Use reasonable polling intervals">
+    Poll every 2–5 seconds. Avoid polling more frequently than once per second.
+  </Accordion>
+  <Accordion title="Set a polling timeout">
+    Set a maximum number of polling attempts (e.g., 150 attempts × 2s = 5 minutes) to avoid infinite loops.
+  </Accordion>
+  <Accordion title="Handle failures gracefully">
+    Always check for `FAILED` status and inspect the `error` field. Implement retry logic for transient errors.
+  </Accordion>
+  <Accordion title="Use async for batch processing">
+    Submit all jobs first, then poll for results. This maximizes throughput and avoids sequential bottlenecks.
+  </Accordion>
+</AccordionGroup>
+

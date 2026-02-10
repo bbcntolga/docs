@@ -1,0 +1,139 @@
+---
+title: "Error Codes"
+description: "HTTP status codes, error types, and troubleshooting guidance for the Aifano API."
+---
+
+## Overview
+
+The Aifano API uses standard HTTP status codes to indicate the success or failure of a request. All error responses include a JSON body with an `error` field describing the issue.
+
+## Error Response Format
+
+```json
+{
+  "error": "A human-readable description of what went wrong."
+}
+```
+
+Some errors include additional fields:
+
+```json
+{
+  "error": "Credit limit reached. You have used 1000 of 1000 credits this month.",
+  "code": "CREDIT_LIMIT_EXCEEDED",
+  "credits_used": 1000,
+  "credit_limit": 1000
+}
+```
+
+## HTTP Status Codes
+
+### Success
+
+| Code | Description |
+|------|-------------|
+| `200 OK` | Request succeeded. Response body contains the result. |
+| `201 Created` | Resource created successfully (e.g., document added to pipeline). |
+
+### Client Errors
+
+| Code | Description | Common Causes |
+|------|-------------|---------------|
+| `400 Bad Request` | The request body is invalid or missing required fields. | Missing `input` field, invalid JSON, unsupported file type. |
+| `401 Unauthorized` | Authentication failed. | Missing `Authorization` header, invalid API key, expired key, revoked key. |
+| `403 Forbidden` | You don't have permission for this action. | Insufficient API key scopes, registration disabled. |
+| `404 Not Found` | The requested resource doesn't exist. | Invalid job ID, pipeline not found, document not found. |
+| `409 Conflict` | Resource already exists. | Duplicate pipeline name, document already in pipeline. |
+| `422 Unprocessable Entity` | The request is well-formed but contains invalid parameters. | Invalid schema, malformed extraction config. |
+| `429 Too Many Requests` | Credit limit exceeded or rate limit hit. | Monthly credit limit reached. |
+
+### Server Errors
+
+| Code | Description | What to Do |
+|------|-------------|------------|
+| `500 Internal Server Error` | Something went wrong on our end. | Retry the request. If it persists, contact support. |
+| `502 Bad Gateway` | Upstream processing service is unavailable. | Wait a moment and retry. |
+| `503 Service Unavailable` | The service is temporarily overloaded. | Retry with exponential backoff. |
+| `504 Gateway Timeout` | The request took too long to process. | Use the async endpoint instead. |
+
+## Common Errors
+
+### Authentication Errors
+
+```json
+// Missing Authorization header
+{ "error": "Missing or invalid Authorization header. Use: Bearer <api_key>" }
+
+// Invalid API key format
+{ "error": "Invalid API key format" }
+
+// Invalid or unknown API key
+{ "error": "Invalid API key" }
+
+// Revoked API key
+{ "error": "API key has been revoked" }
+
+// Expired API key
+{ "error": "API key has expired" }
+```
+
+### Input Errors
+
+```json
+// Missing input
+{ "error": "No input provided. Use 'aifano://file_id' or a public URL." }
+
+// Unsupported file type
+{ "error": "Unsupported file type. Supported: PDF, PNG, JPG, JPEG, TIFF, DOCX, PPTX." }
+```
+
+### Credit Errors
+
+```json
+{
+  "error": "Credit limit reached. You have used 1000 of 1000 credits this month. Please upgrade your plan or wait until next month.",
+  "code": "CREDIT_LIMIT_EXCEEDED",
+  "credits_used": 1000,
+  "credit_limit": 1000
+}
+```
+
+### Processing Errors
+
+```json
+// Parse failure
+{ "error": "Parse failed" }
+
+// Extract failure
+{ "error": "Extract failed" }
+
+// Split failure
+{ "error": "Split failed" }
+
+// Edit failure
+{ "error": "Edit failed" }
+
+// Cancel failure
+{ "error": "Cancel failed" }
+```
+
+## Error Handling Best Practices
+
+<AccordionGroup>
+  <Accordion title="Always check the HTTP status code">
+    Don't assume a `200` response. Check the status code before processing the response body.
+  </Accordion>
+  <Accordion title="Implement retry logic for 5xx errors">
+    Server errors are usually transient. Retry with exponential backoff (e.g., 1s, 2s, 4s, 8s) up to a maximum number of attempts.
+  </Accordion>
+  <Accordion title="Use async endpoints for large documents">
+    If you're getting `504 Gateway Timeout` errors, switch to the async variant of the endpoint to avoid timeouts.
+  </Accordion>
+  <Accordion title="Monitor credit usage proactively">
+    Track the `usage` field in API responses to anticipate when you're approaching your credit limit. Upgrade your plan before hitting the limit.
+  </Accordion>
+  <Accordion title="Validate inputs before sending">
+    Check that your file URL is accessible, the file type is supported, and required fields are present before making API calls.
+  </Accordion>
+</AccordionGroup>
+

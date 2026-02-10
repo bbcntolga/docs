@@ -1,0 +1,73 @@
+---
+title: "Overview"
+description: "Transform unstructured documents into structured data with the Aifano Platform API."
+---
+
+## What is Aifano?
+
+Aifano is a document intelligence platform that converts unstructured documents — PDFs, images, spreadsheets, and more — into structured, machine-readable data. Whether you're building an AI pipeline, automating data entry, or extracting insights from thousands of documents, Aifano provides the APIs to get it done.
+
+## Core Capabilities
+
+<CardGroup cols={2}>
+  <Card title="Parse" icon="file-lines" href="/documentation/parse">
+    Convert documents into structured JSON with text, tables, figures, and bounding boxes. Supports OCR, layout detection, and multi-language documents.
+  </Card>
+  <Card title="Extract" icon="database" href="/documentation/extract">
+    Pull structured data from documents using a JSON schema. Define what you need, and Aifano extracts it — invoices, contracts, forms, and more.
+  </Card>
+  <Card title="Split" icon="scissors" href="/documentation/split">
+    Automatically split multi-section documents into logical parts. Ideal for contracts, reports, and bundled document packages.
+  </Card>
+  <Card title="Edit" icon="pen-to-square" href="/documentation/edit">
+    Modify documents programmatically using natural language instructions. Redact, transform, or update content at scale.
+  </Card>
+</CardGroup>
+
+## How It Works
+
+<Steps>
+  <Step title="Upload or Reference a Document">
+    Upload a file via `/upload` to get an `aifano://` reference, or pass a public URL directly.
+  </Step>
+  <Step title="Process the Document">
+    Call `/parse`, `/extract`, `/split`, or `/edit` with your document reference and configuration options.
+  </Step>
+  <Step title="Get Structured Results">
+    Receive structured JSON with extracted text, tables, metadata, and bounding boxes — ready for your application.
+  </Step>
+</Steps>
+
+## Platform Components
+
+| Component | URL | Description |
+|-----------|-----|-------------|
+| **Platform API** | `platform.aifano.com` | REST API for document processing |
+| **Studio** | `studio.aifano.com` | Visual playground to test and configure processing |
+
+## Supported Document Types
+
+Aifano processes a wide range of document formats:
+
+- **PDFs** — Native text, scanned, and mixed
+- **Images** — PNG, JPEG, TIFF, BMP, WebP
+- **Spreadsheets** — XLSX, XLS, CSV
+- **Documents** — DOCX, DOC, PPTX
+- **Other** — HTML, RTF, and more
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="Quickstart" icon="rocket" href="/documentation/quickstart">
+    Parse your first document in under 5 minutes.
+  </Card>
+  <Card title="Authentication" icon="key" href="/documentation/authentication">
+    Set up your API key and start making requests.
+  </Card>
+  <Card title="API Reference" icon="code" href="/api-reference/introduction">
+    Explore the full API specification.
+  </Card>
+  <Card title="Cookbooks" icon="book" href="/cookbooks/overview">
+    Real-world examples for common use cases.
+  </Card>
+</CardGroup>

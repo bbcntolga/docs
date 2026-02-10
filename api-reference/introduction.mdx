@@ -1,33 +1,127 @@
 ---
-title: 'Introduction'
-description: 'Example section for showcasing API endpoints'
+title: "API Reference"
+description: "Complete reference for the Aifano Platform API — endpoints, parameters, and response schemas."
 ---
 
-<Note>
-  If you're not looking to build API reference documentation, you can delete
-  this section by removing the api-reference folder.
-</Note>
+## Base URL
 
-## Welcome
+All API requests are made to:
 
-There are two ways to build API documentation: [OpenAPI](https://mintlify.com/docs/api-playground/openapi/setup) and [MDX components](https://mintlify.com/docs/api-playground/mdx/configuration). For the starter kit, we are using the following OpenAPI specification.
-
-<Card
-  title="Plant Store Endpoints"
-  icon="leaf"
-  href="https://github.com/mintlify/starter/blob/main/api-reference/openapi.json"
->
-  View the OpenAPI specification file
-</Card>
+```
+https://platform.aifano.com
+```
 
 ## Authentication
 
-All API endpoints are authenticated using Bearer tokens and picked up from the specification file.
+Every request requires a Bearer token in the `Authorization` header:
+
+```bash
+Authorization: Bearer ak_live_your_api_key_here
+```
+
+API keys are created in the [Aifano Studio](https://studio.aifano.com) under **Settings → API Keys**. See [Authentication](/documentation/authentication) for details.
+
+## Request Format
+
+All endpoints accept JSON request bodies with `Content-Type: application/json`:
+
+```bash
+curl -X POST "https://platform.aifano.com/parse" \
+  -H "Authorization: Bearer $AIFANO_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{"input": "https://example.com/document.pdf"}'
+```
+
+## Response Format
+
+Responses are JSON with a consistent structure. Successful responses include:
 
 ```json
-"security": [
-  {
-    "bearerAuth": []
-  }
-]
+{
+  "job_id": "job_abc123",
+  "duration": 2.34,
+  "usage": {
+    "num_pages": 5,
+    "credits": 5
+  },
+  "result": { ... }
+}
 ```
+
+Error responses include an `error` field:
+
+```json
+{
+  "error": "Description of what went wrong"
+}
+```
+
+See [Response Format](/documentation/response-format) and [Error Codes](/documentation/error-codes) for details.
+
+## Endpoints Overview
+
+### Document Processing
+
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| `POST` | `/parse` | Parse a document into structured JSON |
+| `POST` | `/parse_async` | Parse a document asynchronously |
+| `POST` | `/extract` | Extract structured data using a JSON schema |
+| `POST` | `/extract_async` | Extract data asynchronously |
+| `POST` | `/split` | Split a document into logical sections |
+| `POST` | `/split_async` | Split a document asynchronously |
+| `POST` | `/edit` | Edit or fill forms in a document |
+| `POST` | `/edit_async` | Edit a document asynchronously |
+
+### Pipelines
+
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| `POST` | `/pipeline` | Run a pipeline on a document |
+| `POST` | `/pipeline_async` | Run a pipeline asynchronously |
+
+### Files & Jobs
+
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| `POST` | `/upload` | Upload a document to Aifano storage |
+| `GET` | `/job/{job_id}` | Get the status and result of an async job |
+| `GET` | `/jobs` | List all jobs for your organization |
+| `POST` | `/cancel/{job_id}` | Cancel a running or pending job |
+
+## Input Types
+
+All processing endpoints accept a document reference via the `input` field:
+
+| Input Type | Format | Example |
+|-----------|--------|---------|
+| Public URL | `https://...` | `https://example.com/doc.pdf` |
+| Presigned URL | `https://...?signature=...` | S3, GCS, Azure presigned URLs |
+| Aifano reference | `aifano://...` | `aifano://abc123.pdf` |
+| Job reference | `jobid://...` | `jobid://job_abc123` |
+
+## SDKs & Libraries
+
+<CardGroup cols={2}>
+  <Card title="Python" icon="python">
+    ```bash
+    pip install aifano
+    ```
+  </Card>
+  <Card title="JavaScript / TypeScript" icon="js">
+    ```bash
+    npm install @aifano/sdk
+    ```
+  </Card>
+</CardGroup>
+
+<Note>
+  SDKs are coming soon. In the meantime, use the REST API directly with any HTTP client.
+</Note>
+
+## Need Help?
+
+- **Documentation**: Browse the [guides](/documentation/overview) for detailed walkthroughs
+- **Cookbooks**: See [real-world examples](/cookbooks/overview) for common use cases
+- **Support**: Email [support@aifano.com](mailto:support@aifano.com)
+

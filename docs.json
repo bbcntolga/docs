@@ -1,55 +1,105 @@
 {
   "$schema": "https://mintlify.com/docs.json",
   "theme": "mint",
-  "name": "Mint Starter Kit",
+  "name": "Aifano",
   "colors": {
-    "primary": "#16A34A",
-    "light": "#07C983",
-    "dark": "#15803D"
+    "primary": "#7E20C8",
+    "light": "#BB64FF",
+    "dark": "#6B1AAB"
   },
   "favicon": "/favicon.svg",
   "navigation": {
     "tabs": [
       {
-        "tab": "Guides",
+        "tab": "Documentation",
         "groups": [
           {
             "group": "Get Started",
             "pages": [
-              "introduction",
-              "quickstart",
-              "development"
+              "documentation/overview",
+              "documentation/quickstart",
+              "documentation/authentication"
             ]
           },
           {
-            "group": "Essentials",
+            "group": "Core Concepts",
             "pages": [
-              "essentials/markdown",
-              "essentials/code",
-              "essentials/images",
-              "essentials/settings",
-              "essentials/navigation",
-              "essentials/reusable-snippets"
+              "documentation/parse",
+              "documentation/extract",
+              "documentation/split",
+              "documentation/edit",
+              "documentation/pipelines"
+            ]
+          },
+          {
+            "group": "Configuration",
+            "pages": [
+              "documentation/async-processing",
+              "documentation/file-handling",
+              "documentation/response-format"
+            ]
+          },
+          {
+            "group": "Reference",
+            "pages": [
+              "documentation/credit-usage",
+              "documentation/error-codes",
+              "documentation/rate-limits"
             ]
           }
         ]
       },
       {
         "tab": "API Reference",
+        "openapi": "/api-reference/openapi.json",
         "groups": [
           {
-            "group": "API Documentation",
+            "group": "API Reference",
             "pages": [
               "api-reference/introduction"
             ]
           },
           {
-            "group": "Endpoint Examples",
+            "group": "Document Processing",
             "pages": [
-              "api-reference/endpoint/get",
-              "api-reference/endpoint/create",
-              "api-reference/endpoint/delete",
-              "api-reference/endpoint/webhook"
+              "POST /parse",
+              "POST /parse_async",
+              "POST /extract",
+              "POST /extract_async",
+              "POST /split",
+              "POST /split_async",
+              "POST /edit",
+              "POST /edit_async"
+            ]
+          },
+          {
+            "group": "Pipelines",
+            "pages": [
+              "POST /pipeline",
+              "POST /pipeline_async"
+            ]
+          },
+          {
+            "group": "Files & Jobs",
+            "pages": [
+              "POST /upload",
+              "GET /job/{job_id}",
+              "GET /jobs",
+              "POST /cancel/{job_id}"
+            ]
+          }
+        ]
+      },
+      {
+        "tab": "Cookbooks",
+        "groups": [
+          {
+            "group": "Cookbooks",
+            "pages": [
+              "cookbooks/overview",
+              "cookbooks/invoice-processing",
+              "cookbooks/contract-analysis",
+              "cookbooks/multi-document-pipelines"
             ]
           }
         ]
@@ -58,19 +108,14 @@
     "global": {
       "anchors": [
         {
-          "anchor": "Documentation",
-          "href": "https://mintlify.com/docs",
-          "icon": "book-open-cover"
+          "anchor": "Studio",
+          "href": "https://studio.aifano.com",
+          "icon": "browser"
         },
         {
-          "anchor": "Community",
-          "href": "https://mintlify.com/community",
-          "icon": "slack"
-        },
-        {
-          "anchor": "Blog",
-          "href": "https://mintlify.com/blog",
-          "icon": "newspaper"
+          "anchor": "API Status",
+          "href": "https://status.aifano.com",
+          "icon": "signal"
         }
       ]
     }
@@ -83,20 +128,26 @@
     "links": [
       {
         "label": "Support",
-        "href": "mailto:hi@mintlify.com"
+        "href": "mailto:support@aifano.com"
       }
     ],
     "primary": {
       "type": "button",
-      "label": "Dashboard",
-      "href": "https://dashboard.mintlify.com"
+      "label": "Studio",
+      "href": "https://studio.aifano.com"
     }
   },
   "footer": {
     "socials": {
-      "x": "https://x.com/mintlify",
-      "github": "https://github.com/mintlify",
-      "linkedin": "https://linkedin.com/company/mintlify"
+      "github": "https://github.com/aifano",
+      "linkedin": "https://linkedin.com/company/aifano"
+    }
+  },
+  "api": {
+    "baseUrl": "https://platform.aifano.com",
+    "auth": {
+      "method": "bearer",
+      "name": "Authorization"
     }
   }
 }

@@ -1,0 +1,117 @@
+---
+title: "Authentication"
+description: "Authenticate with the Aifano Platform API using API keys."
+---
+
+## API Keys
+
+All Aifano Platform API requests require authentication via a **Bearer token**. API keys are scoped to your organization and can be managed in the [Aifano Studio](https://studio.aifano.com).
+
+### Key Format
+
+Aifano API keys follow this format:
+
+```
+ak_live_xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+```
+
+<Warning>
+  Keep your API keys secure. Never expose them in client-side code, public repositories, or browser requests. Use environment variables or a secrets manager.
+</Warning>
+
+## Making Authenticated Requests
+
+Include your API key in the `Authorization` header as a Bearer token:
+
+<CodeGroup>
+
+```bash cURL
+curl -X POST "https://platform.aifano.com/parse" \
+  -H "Authorization: Bearer ak_live_your_key_here" \
+  -H "Content-Type: application/json" \
+  -d '{"input": "https://example.com/document.pdf"}'
+```
+
+```python Python
+import requests
+
+headers = {
+    "Authorization": "Bearer ak_live_your_key_here",
+    "Content-Type": "application/json"
+}
+
+response = requests.post(
+    "https://platform.aifano.com/parse",
+    headers=headers,
+    json={"input": "https://example.com/document.pdf"}
+)
+```
+
+```javascript Node.js
+const response = await fetch("https://platform.aifano.com/parse", {
+  method: "POST",
+  headers: {
+    "Authorization": "Bearer ak_live_your_key_here",
+    "Content-Type": "application/json",
+  },
+  body: JSON.stringify({ input: "https://example.com/document.pdf" }),
+});
+```
+
+</CodeGroup>
+
+## Managing API Keys
+
+### Creating a Key
+
+1. Go to [studio.aifano.com](https://studio.aifano.com)
+2. Navigate to **Settings → API Keys**
+3. Click **Create API Key**
+4. Copy the key immediately — it won't be shown again
+
+### Revoking a Key
+
+Revoked keys immediately stop working. Go to **Settings → API Keys** and click **Revoke** next to the key you want to disable.
+
+### Key Scopes
+
+API keys can be scoped to specific operations:
+
+| Scope | Description |
+|-------|-------------|
+| `parse` | Document parsing |
+| `extract` | Data extraction |
+| `split` | Document splitting |
+| `edit` | Document editing |
+| `upload` | File uploads |
+| `*` | All operations (default) |
+
+## Error Responses
+
+| Status | Error | Description |
+|--------|-------|-------------|
+| `401` | `Missing or invalid Authorization header` | No Bearer token provided |
+| `401` | `Invalid API key format` | Key doesn't start with `ak_live_` |
+| `401` | `Invalid API key` | Key not found or doesn't match |
+| `401` | `API key has been revoked` | Key was revoked in Studio |
+| `401` | `API key has expired` | Key passed its expiration date |
+
+## Best Practices
+
+<AccordionGroup>
+  <Accordion title="Use environment variables">
+    Store your API key in an environment variable rather than hardcoding it:
+    ```bash
+    export AIFANO_API_KEY="ak_live_your_key_here"
+    ```
+  </Accordion>
+  <Accordion title="Rotate keys regularly">
+    Create new keys periodically and revoke old ones. This limits the impact of a compromised key.
+  </Accordion>
+  <Accordion title="Use scoped keys">
+    If a service only needs to parse documents, create a key with only the `parse` scope.
+  </Accordion>
+  <Accordion title="Monitor usage">
+    Check your API key usage in Studio to detect unusual activity early.
+  </Accordion>
+</AccordionGroup>

@@ -1,0 +1,127 @@
+---
+title: "Rate Limits"
+description: "Understand API rate limits, concurrency limits, and how to handle throttling."
+---
+
+## Overview
+
+Aifano enforces rate limits to ensure fair usage and platform stability. Limits are applied per organization and vary by plan.
+
+## Rate Limits by Plan
+
+| Plan | Requests per Minute | Concurrent Jobs | Monthly Credits |
+|------|--------------------:|----------------:|----------------:|
+| **Free** | 20 | 5 | 1,000 |
+| **Pro** | 100 | 20 | 10,000 |
+| **Enterprise** | Custom | Custom | Custom |
+
+<Note>
+  Contact [support@aifano.com](mailto:support@aifano.com) for Enterprise plan details and custom rate limits.
+</Note>
+
+## Concurrency Limits
+
+Concurrency limits control how many documents can be processed simultaneously. This applies to both sync and async endpoints.
+
+| Endpoint Type | Free | Pro | Enterprise |
+|--------------|-----:|----:|-----------:|
+| Sync (`/parse`, `/extract`, etc.) | 5 | 20 | Custom |
+| Async (`/parse_async`, etc.) | 5 | 20 | Custom |
+| Upload (`/upload`) | 10 | 50 | Custom |
+
+## Rate Limit Headers
+
+Rate limit information is included in API response headers:
+
+| Header | Description |
+|--------|-------------|
+| `X-RateLimit-Limit` | Maximum requests allowed per minute |
+| `X-RateLimit-Remaining` | Requests remaining in the current window |
+| `X-RateLimit-Reset` | Unix timestamp when the rate limit resets |
+
+## Handling Rate Limits
+
+When you exceed the rate limit, the API returns a `429 Too Many Requests` response:
+
+```json
+{
+  "error": "Rate limit exceeded. Please retry after 30 seconds.",
+  "retry_after": 30
+}
+```
+
+### Retry Strategy
+
+Implement exponential backoff when you receive a `429` response:
+
+<CodeGroup>
+
+```python Python
+import time
+import requests
+
+def call_with_retry(url, headers, json_data, max_retries=5):
+    for attempt in range(max_retries):
+        response = requests.post(url, headers=headers, json=json_data)
+
+        if response.status_code == 429:
+            wait_time = min(2 ** attempt, 60)  # Max 60s
+            print(f"Rate limited. Retrying in {wait_time}s...")
+            time.sleep(wait_time)
+            continue
+
+        return response
+
+    raise Exception("Max retries exceeded")
+```
+
+```javascript JavaScript
+async function callWithRetry(url, options, maxRetries = 5) {
+  for (let attempt = 0; attempt < maxRetries; attempt++) {
+    const response = await fetch(url, options);
+
+    if (response.status === 429) {
+      const waitTime = Math.min(2 ** attempt, 60) * 1000;
+      console.log(`Rate limited. Retrying in ${waitTime / 1000}s...`);
+      await new Promise(r => setTimeout(r, waitTime));
+      continue;
+    }
+
+    return response;
+  }
+
+  throw new Error("Max retries exceeded");
+}
+```
+
+</CodeGroup>
+
+## Best Practices
+
+<AccordionGroup>
+  <Accordion title="Use async endpoints for batch processing">
+    Submit all jobs via async endpoints first, then poll for results. This is more efficient than sequential sync calls and avoids hitting rate limits.
+  </Accordion>
+  <Accordion title="Implement exponential backoff">
+    When you receive a `429` response, wait before retrying. Double the wait time with each retry (1s, 2s, 4s, 8s...) up to a maximum of 60 seconds.
+  </Accordion>
+  <Accordion title="Monitor rate limit headers">
+    Check `X-RateLimit-Remaining` in response headers to proactively slow down before hitting the limit.
+  </Accordion>
+  <Accordion title="Spread requests over time">
+    Instead of sending 100 requests at once, spread them evenly across the minute to stay within rate limits.
+  </Accordion>
+  <Accordion title="Contact support for higher limits">
+    If your use case requires higher rate limits, reach out to [support@aifano.com](mailto:support@aifano.com) to discuss Enterprise plans.
+  </Accordion>
+</AccordionGroup>
+
+## Credit Limits vs. Rate Limits
+
+| Type | Scope | Reset | Error Code |
+|------|-------|-------|------------|
+| **Rate Limit** | Requests per minute | Every minute | `429` |
+| **Credit Limit** | Credits per month | Monthly | `429` with `CREDIT_LIMIT_EXCEEDED` |
+
+Rate limits restrict how fast you can make requests. Credit limits restrict how much processing you can do per month. Both return `429` status codes but with different error messages.
+

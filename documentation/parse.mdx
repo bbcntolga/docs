@@ -1,0 +1,188 @@
+---
+title: "Parse"
+description: "Convert documents into structured JSON with text, tables, figures, and bounding boxes."
+---
+
+## Overview
+
+The Parse endpoint converts any document into structured JSON. It extracts text, tables, figures, and metadata with precise bounding boxes for every element.
+
+**Credits:** 1 credit per page
+
+## Basic Usage
+
+<CodeGroup>
+
+```bash cURL
+curl -X POST "https://platform.aifano.com/parse" \
+  -H "Authorization: Bearer $AIFANO_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{"input": "https://example.com/report.pdf"}'
+```
+
+```python Python
+import requests
+
+result = requests.post(
+    "https://platform.aifano.com/parse",
+    headers={"Authorization": f"Bearer {AIFANO_API_KEY}"},
+    json={"input": "https://example.com/report.pdf"}
+).json()
+
+for chunk in result["result"]["chunks"]:
+    print(chunk["content"][:200])
+```
+
+</CodeGroup>
+
+## Input Options
+
+The `input` field accepts:
+
+| Format | Example | Description |
+|--------|---------|-------------|
+| Public URL | `https://example.com/doc.pdf` | Any publicly accessible document URL |
+| Presigned URL | `https://s3.amazonaws.com/...` | AWS S3 presigned URLs |
+| Aifano reference | `aifano://abc123.pdf` | File uploaded via `/upload` |
+| Job reference | `jobid://job_abc123` | Reuse parsed result from a previous job |
+
+## Configuration Options
+
+### Enhance
+
+Use vision language models to improve accuracy for specific block types:
+
+```json
+{
+  "input": "aifano://document.pdf",
+  "enhance": {
+    "agentic": [
+      { "scope": "table" },
+      { "scope": "figure", "prompt": "Describe the chart data points" }
+    ],
+    "summarize_figures": true
+  }
+}
+```
+
+### Chunking & Retrieval
+
+Configure how content is chunked for RAG pipelines:
+
+```json
+{
+  "input": "aifano://document.pdf",
+  "retrieval": {
+    "chunking": {
+      "chunk_mode": "variable",
+      "chunk_size": 1000
+    },
+    "embedding_optimized": true
+  }
+}
+```
+
+| Chunk Mode | Description |
+|------------|-------------|
+| `disabled` | No chunking (default) |
+| `variable` | Variable-size chunks based on content |
+| `section` | One chunk per document section |
+| `page` | One chunk per page |
+| `block` | One chunk per block |
+| `page_sections` | Sections within pages |
+
+### Formatting
+
+Control output format for tables and special content:
+
+```json
+{
+  "input": "aifano://document.pdf",
+  "formatting": {
+    "table_output_format": "html",
+    "add_page_markers": true,
+    "merge_tables": true,
+    "include": ["hyperlinks", "signatures"]
+  }
+}
+```
+
+### Settings
+
+Fine-tune OCR and processing behavior:
+
+```json
+{
+  "input": "aifano://document.pdf",
+  "settings": {
+    "ocr_system": "standard",
+    "extraction_mode": "hybrid",
+    "page_range": { "start": 1, "end": 10 },
+    "document_password": "secret123"
+  }
+}
+```
+
+| Setting | Options | Description |
+|---------|---------|-------------|
+| `ocr_system` | `standard`, `legacy` | Standard supports all languages; legacy for Germanic only |
+| `extraction_mode` | `hybrid`, `ocr` | Hybrid combines OCR + embedded text for best accuracy |
+| `page_range` | `{start, end}` | Process only specific pages |
+| `document_password` | string | Password for encrypted PDFs |
+
+## Response Structure
+
+```json
+{
+  "job_id": "job_abc123",
+  "duration": 3.21,
+  "usage": { "num_pages": 10, "credits": 10 },
+  "result": {
+    "type": "full",
+    "chunks": [
+      {
+        "content": "# Section Title\n\nParagraph text...",
+        "embed": "Section Title. Paragraph text...",
+        "blocks": [
+          {
+            "type": "Title",
+            "content": "Section Title",
+            "bbox": { "left": 0.1, "top": 0.05, "width": 0.8, "height": 0.04, "page": 1 },
+            "confidence": "high"
+          }
+        ]
+      }
+    ]
+  }
+}
+```
+
+### Block Types
+
+| Type | Description |
+|------|-------------|
+| `Title` | Document or section title |
+| `Section Header` | Sub-section heading |
+| `Text` | Body text paragraph |
+| `Table` | Tabular data |
+| `Figure` | Image or chart |
+| `List Item` | Bulleted or numbered list item |
+| `Header` | Page header |
+| `Footer` | Page footer |
+| `Page Number` | Page number |
+| `Key Value` | Key-value pair |
+| `Comment` | Annotation or comment |
+| `Signature` | Signature block |
+
+## Async Processing
+
+For large documents, use the async variant:
+
+```bash
+curl -X POST "https://platform.aifano.com/parse_async" \
+  -H "Authorization: Bearer $AIFANO_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{"input": "aifano://large-document.pdf"}'
+```
+
+See [Async Processing](/documentation/async-processing) for details on polling and webhooks.

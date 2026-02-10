@@ -1,0 +1,150 @@
+---
+title: "File Handling"
+description: "Upload documents, manage file references, and understand supported file types."
+---
+
+## Overview
+
+Aifano accepts documents via public URLs, presigned URLs, or direct file uploads. Uploaded files receive an `aifano://` reference that can be used across all endpoints.
+
+## Input Methods
+
+### Public URL
+
+Pass any publicly accessible URL directly:
+
+```json
+{
+  "input": "https://example.com/report.pdf"
+}
+```
+
+### Presigned URL
+
+Use presigned URLs from S3, GCS, Azure Blob, or any cloud storage:
+
+```json
+{
+  "input": "https://s3.amazonaws.com/bucket/doc.pdf?X-Amz-Signature=..."
+}
+```
+
+### Aifano File Reference
+
+Upload a file first, then use the returned `aifano://` reference:
+
+```json
+{
+  "input": "aifano://abc123def456.pdf"
+}
+```
+
+### Job Reference
+
+Reuse results from a previous job to skip re-processing:
+
+```json
+{
+  "input": "jobid://job_abc123"
+}
+```
+
+<Tip>
+  Using `jobid://` references with Extract skips the parsing step entirely, saving time and credits when you've already parsed a document.
+</Tip>
+
+## Uploading Files
+
+Upload documents via `POST /upload` with multipart form data:
+
+<CodeGroup>
+
+```bash cURL
+curl -X POST "https://platform.aifano.com/upload" \
+  -H "Authorization: Bearer $AIFANO_API_KEY" \
+  -F "file=@/path/to/document.pdf"
+```
+
+```python Python
+import requests
+
+with open("document.pdf", "rb") as f:
+    result = requests.post(
+        "https://platform.aifano.com/upload",
+        headers={"Authorization": f"Bearer {AIFANO_API_KEY}"},
+        files={"file": f}
+    ).json()
+
+print(f"File ID: {result['file_id']}")
+# Use result['file_id'] as input for parse/extract/split
+```
+
+```javascript JavaScript
+const formData = new FormData();
+formData.append("file", fileBlob, "document.pdf");
+
+const result = await fetch("https://platform.aifano.com/upload", {
+  method: "POST",
+  headers: { "Authorization": `Bearer ${AIFANO_API_KEY}` },
+  body: formData
+}).then(r => r.json());
+
+console.log(`File ID: ${result.file_id}`);
+```
+
+</CodeGroup>
+
+### Upload Response
+
+```json
+{
+  "file_id": "aifano://abc123def456.pdf",
+  "presigned_url": "https://storage.aifano.com/..."
+}
+```
+
+## Supported File Types
+
+| Format | Extensions | Notes |
+|--------|-----------|-------|
+| PDF | `.pdf` | Full support including scanned documents |
+| Images | `.png`, `.jpg`, `.jpeg`, `.tiff` | OCR applied automatically |
+| Word | `.docx` | Microsoft Word documents |
+| PowerPoint | `.pptx` | Presentation slides |
+
+## File Size Limits
+
+| Limit | Value |
+|-------|-------|
+| Maximum file size | 50 MB |
+| Maximum pages (sync) | Recommended < 50 pages |
+| Maximum pages (async) | No hard limit |
+
+<Warning>
+  For documents over 50 pages, use the async endpoints (`/parse_async`, `/extract_async`, etc.) to avoid request timeouts.
+</Warning>
+
+## File Extension Override
+
+If your file URL doesn't have a recognizable extension, specify it explicitly:
+
+```bash
+curl -X POST "https://platform.aifano.com/upload?extension=pdf" \
+  -H "Authorization: Bearer $AIFANO_API_KEY" \
+  -F "file=@document-without-extension"
+```
+
+## Best Practices
+
+<AccordionGroup>
+  <Accordion title="Prefer aifano:// references for multiple operations">
+    Upload once, then use the `aifano://` reference for parse, extract, split, and edit. This avoids re-uploading the same file.
+  </Accordion>
+  <Accordion title="Use jobid:// to skip re-parsing">
+    If you've already parsed a document and want to extract different data, use `jobid://job_id` as input to skip the parsing step.
+  </Accordion>
+  <Accordion title="Validate file types before uploading">
+    Check that your file extension is in the supported list before uploading to avoid 400 errors.
+  </Accordion>
+</AccordionGroup>
+

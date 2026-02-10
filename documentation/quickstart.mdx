@@ -1,0 +1,156 @@
+---
+title: "Quickstart"
+description: "Parse your first document in under 5 minutes."
+---
+
+## Prerequisites
+
+1. An Aifano account — sign up at [studio.aifano.com](https://studio.aifano.com)
+2. An API key (starts with `ak_live_`)
+
+## Step 1: Get Your API Key
+
+Navigate to **Settings → API Keys** in the [Aifano Studio](https://studio.aifano.com) and create a new API key. Store it securely — you won't be able to see it again.
+
+```bash
+export AIFANO_API_KEY="ak_live_your_key_here"
+```
+
+## Step 2: Parse a Document
+
+<CodeGroup>
+
+```bash cURL
+curl -X POST "https://platform.aifano.com/parse" \
+  -H "Authorization: Bearer $AIFANO_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "input": "https://example.com/sample.pdf"
+  }'
+```
+
+```python Python
+import requests
+
+response = requests.post(
+    "https://platform.aifano.com/parse",
+    headers={"Authorization": f"Bearer {AIFANO_API_KEY}"},
+    json={"input": "https://example.com/sample.pdf"}
+)
+
+result = response.json()
+print(f"Pages: {result['usage']['num_pages']}")
+print(f"Chunks: {len(result['result']['chunks'])}")
+```
+
+```javascript Node.js
+const response = await fetch("https://platform.aifano.com/parse", {
+  method: "POST",
+  headers: {
+    "Authorization": `Bearer ${AIFANO_API_KEY}`,
+    "Content-Type": "application/json",
+  },
+  body: JSON.stringify({
+    input: "https://example.com/sample.pdf",
+  }),
+});
+
+const result = await response.json();
+console.log(`Pages: ${result.usage.num_pages}`);
+console.log(`Chunks: ${result.result.chunks.length}`);
+```
+
+</CodeGroup>
+
+## Step 3: Upload and Parse a Local File
+
+If your document isn't publicly accessible, upload it first:
+
+<CodeGroup>
+
+```bash cURL
+# Upload the file
+curl -X POST "https://platform.aifano.com/upload" \
+  -H "Authorization: Bearer $AIFANO_API_KEY" \
+  -F "file=@/path/to/document.pdf"
+
+# Parse using the returned file reference
+curl -X POST "https://platform.aifano.com/parse" \
+  -H "Authorization: Bearer $AIFANO_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{"input": "aifano://abc123def456.pdf"}'
+```
+
+```python Python
+import requests
+
+# Upload
+with open("document.pdf", "rb") as f:
+    upload = requests.post(
+        "https://platform.aifano.com/upload",
+        headers={"Authorization": f"Bearer {AIFANO_API_KEY}"},
+        files={"file": f}
+    )
+
+file_id = upload.json()["file_id"]
+
+# Parse
+result = requests.post(
+    "https://platform.aifano.com/parse",
+    headers={"Authorization": f"Bearer {AIFANO_API_KEY}"},
+    json={"input": file_id}
+).json()
+```
+
+</CodeGroup>
+
+## Understanding the Response
+
+```json
+{
+  "job_id": "job_abc123",
+  "duration": 2.34,
+  "usage": {
+    "num_pages": 5,
+    "credits": 5
+  },
+  "result": {
+    "type": "full",
+    "chunks": [
+      {
+        "content": "# Introduction\n\nThis document covers...",
+        "embed": "Introduction. This document covers...",
+        "blocks": [
+          {
+            "type": "Title",
+            "content": "Introduction",
+            "bbox": { "left": 0.1, "top": 0.05, "width": 0.8, "height": 0.04, "page": 1 }
+          }
+        ]
+      }
+    ]
+  }
+}
+```
+
+Key fields:
+- **`chunks`** — Document content split into logical sections
+- **`blocks`** — Individual elements (text, tables, figures) with bounding boxes
+- **`usage`** — Pages processed and credits consumed
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="Extract Data" icon="database" href="/documentation/extract">
+    Extract structured data using JSON schemas.
+  </Card>
+  <Card title="Async Processing" icon="clock" href="/documentation/async-processing">
+    Process large documents asynchronously.
+  </Card>
+  <Card title="Cookbooks" icon="book" href="/cookbooks/overview">
+    See real-world examples.
+  </Card>
+  <Card title="API Reference" icon="code" href="/api-reference/introduction">
+    Full API documentation.
+  </Card>
+</CardGroup>

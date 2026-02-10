@@ -1,0 +1,168 @@
+---
+title: "Extract"
+description: "Extract structured data from documents using JSON schemas."
+---
+
+## Overview
+
+The Extract endpoint combines document parsing with schema-based data extraction. Define a JSON schema describing the data you need, and Aifano extracts it from any document.
+
+**Credits:** 2 credits per page
+
+## Basic Usage
+
+<CodeGroup>
+
+```bash cURL
+curl -X POST "https://platform.aifano.com/extract" \
+  -H "Authorization: Bearer $AIFANO_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "input": "aifano://invoice.pdf",
+    "schema": {
+      "type": "object",
+      "properties": {
+        "invoice_number": { "type": "string" },
+        "date": { "type": "string" },
+        "total_amount": { "type": "number" },
+        "line_items": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "description": { "type": "string" },
+              "quantity": { "type": "number" },
+              "unit_price": { "type": "number" }
+            }
+          }
+        }
+      }
+    }
+  }'
+```
+
+```python Python
+import requests
+
+schema = {
+    "type": "object",
+    "properties": {
+        "invoice_number": {"type": "string"},
+        "date": {"type": "string"},
+        "total_amount": {"type": "number"},
+        "line_items": {
+            "type": "array",
+            "items": {
+                "type": "object",
+                "properties": {
+                    "description": {"type": "string"},
+                    "quantity": {"type": "number"},
+                    "unit_price": {"type": "number"}
+                }
+            }
+        }
+    }
+}
+
+result = requests.post(
+    "https://platform.aifano.com/extract",
+    headers={"Authorization": f"Bearer {AIFANO_API_KEY}"},
+    json={"input": "aifano://invoice.pdf", "schema": schema}
+).json()
+
+print(result["result"])
+```
+
+</CodeGroup>
+
+## Response
+
+```json
+{
+  "job_id": "job_xyz789",
+  "duration": 4.56,
+  "usage": { "num_pages": 2, "credits": 4 },
+  "result": {
+    "invoice_number": "INV-2025-001",
+    "date": "2025-01-15",
+    "total_amount": 1250.00,
+    "line_items": [
+      { "description": "Consulting Services", "quantity": 10, "unit_price": 100.00 },
+      { "description": "Software License", "quantity": 1, "unit_price": 250.00 }
+    ]
+  }
+}
+```
+
+## Schema Design Tips
+
+<AccordionGroup>
+  <Accordion title="Use descriptive property names">
+    Property names guide the extraction model. `invoice_number` works better than `id`.
+  </Accordion>
+  <Accordion title="Add descriptions to properties">
+    ```json
+    {
+      "total_amount": {
+        "type": "number",
+        "description": "The total invoice amount including tax"
+      }
+    }
+    ```
+  </Accordion>
+  <Accordion title="Use arrays for repeating data">
+    Line items, table rows, and lists should use `array` type with `items` schema.
+  </Accordion>
+  <Accordion title="Use enums for known values">
+    ```json
+    {
+      "status": {
+        "type": "string",
+        "enum": ["paid", "pending", "overdue"]
+      }
+    }
+    ```
+  </Accordion>
+</AccordionGroup>
+
+## Custom System Prompt
+
+Guide the extraction model with a custom system prompt:
+
+```json
+{
+  "input": "aifano://contract.pdf",
+  "schema": { "..." : "..." },
+  "system_prompt": "Extract all monetary values in EUR. Dates should be in ISO 8601 format."
+}
+```
+
+## Reusing Parsed Results
+
+If you've already parsed a document, pass the `job_id` to skip re-parsing:
+
+```json
+{
+  "input": "jobid://job_abc123",
+  "schema": { "..." : "..." }
+}
+```
+
+This saves credits by reusing the parse result (you only pay extraction credits, not parse credits).
+
+## Parsing Options
+
+Control how the document is parsed before extraction:
+
+```json
+{
+  "input": "aifano://document.pdf",
+  "schema": { "..." : "..." },
+  "parsing": {
+    "enhance": { "agentic": [{ "scope": "table" }] },
+    "settings": { "ocr_system": "standard" }
+  }
+}
+```
+
+See [Parse](/documentation/parse) for all available parsing options.

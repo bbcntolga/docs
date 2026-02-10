@@ -1,216 +1,993 @@
 {
   "openapi": "3.1.0",
   "info": {
-    "title": "OpenAPI Plant Store",
-    "description": "A sample API that uses a plant store as an example to demonstrate features in the OpenAPI specification",
-    "license": {
-      "name": "MIT"
-    },
-    "version": "1.0.0"
+    "title": "Aifano Platform API",
+    "version": "1.0.0",
+    "description": "Transform unstructured documents into structured data. Parse, extract, split, and edit documents at scale."
   },
   "servers": [
     {
-      "url": "http://sandbox.mintlify.com"
+      "url": "https://platform.aifano.com",
+      "description": "Production"
     }
   ],
   "security": [
     {
-      "bearerAuth": []
+      "BearerAuth": []
     }
   ],
   "paths": {
-    "/plants": {
-      "get": {
-        "description": "Returns all plants from the system that the user has access to",
+    "/parse": {
+      "post": {
+        "summary": "Parse Document",
+        "operationId": "parse",
+        "description": "Convert a document into structured JSON with text, tables, and figures. Returns chunks with content, bounding boxes, and block-level detail.",
+        "tags": ["Document Processing"],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/ParseRequest" }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful parse response",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ParseResponse" }
+              }
+            }
+          },
+          "400": { "$ref": "#/components/responses/BadRequest" },
+          "401": { "$ref": "#/components/responses/Unauthorized" },
+          "422": { "$ref": "#/components/responses/ValidationError" },
+          "500": { "$ref": "#/components/responses/InternalError" }
+        }
+      }
+    },
+    "/parse_async": {
+      "post": {
+        "summary": "Parse Document (Async)",
+        "operationId": "parse_async",
+        "description": "Asynchronously parse a document. Returns a job_id that can be polled via GET /job/{job_id}.",
+        "tags": ["Document Processing"],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/AsyncParseRequest" }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Job created",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/AsyncJobResponse" }
+              }
+            }
+          },
+          "400": { "$ref": "#/components/responses/BadRequest" },
+          "401": { "$ref": "#/components/responses/Unauthorized" },
+          "422": { "$ref": "#/components/responses/ValidationError" }
+        }
+      }
+    },
+    "/extract": {
+      "post": {
+        "summary": "Extract Data",
+        "operationId": "extract",
+        "description": "Extract structured data from a document using a JSON schema. Combines parsing and schema-based extraction in one call.",
+        "tags": ["Document Processing"],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/ExtractRequest" }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful extraction",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ExtractResponse" }
+              }
+            }
+          },
+          "400": { "$ref": "#/components/responses/BadRequest" },
+          "401": { "$ref": "#/components/responses/Unauthorized" },
+          "422": { "$ref": "#/components/responses/ValidationError" }
+        }
+      }
+    },
+    "/extract_async": {
+      "post": {
+        "summary": "Extract Data (Async)",
+        "operationId": "extract_async",
+        "description": "Asynchronously extract structured data. Returns a job_id for polling.",
+        "tags": ["Document Processing"],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/AsyncExtractRequest" }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Job created",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/AsyncJobResponse" }
+              }
+            }
+          },
+          "401": { "$ref": "#/components/responses/Unauthorized" }
+        }
+      }
+    },
+    "/split": {
+      "post": {
+        "summary": "Split Document",
+        "operationId": "split",
+        "description": "Split a document into logical sections based on category descriptions. Useful for separating multi-section documents like contracts or reports.",
+        "tags": ["Document Processing"],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/SplitRequest" }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful split",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/SplitResponse" }
+              }
+            }
+          },
+          "400": { "$ref": "#/components/responses/BadRequest" },
+          "401": { "$ref": "#/components/responses/Unauthorized" }
+        }
+      }
+    },
+    "/split_async": {
+      "post": {
+        "summary": "Split Document (Async)",
+        "operationId": "split_async",
+        "description": "Asynchronously split a document. Returns a job_id for polling.",
+        "tags": ["Document Processing"],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/AsyncSplitRequest" }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Job created",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/AsyncJobResponse" }
+              }
+            }
+          },
+          "401": { "$ref": "#/components/responses/Unauthorized" }
+        }
+      }
+    },
+    "/edit": {
+      "post": {
+        "summary": "Edit Document",
+        "operationId": "edit",
+        "description": "Edit a document using natural language instructions. Modify, redact, or transform document content programmatically.",
+        "tags": ["Document Processing"],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/EditRequest" }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful edit",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/EditResponse" }
+              }
+            }
+          },
+          "400": { "$ref": "#/components/responses/BadRequest" },
+          "401": { "$ref": "#/components/responses/Unauthorized" }
+        }
+      }
+    },
+    "/edit_async": {
+      "post": {
+        "summary": "Edit Document (Async)",
+        "operationId": "edit_async",
+        "description": "Asynchronously edit a document. Returns a job_id for polling.",
+        "tags": ["Document Processing"],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/AsyncEditRequest" }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Job created",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/AsyncJobResponse" }
+              }
+            }
+          },
+          "401": { "$ref": "#/components/responses/Unauthorized" }
+        }
+      }
+    },
+    "/pipeline": {
+      "post": {
+        "summary": "Run Pipeline",
+        "operationId": "pipeline",
+        "description": "Execute a pre-configured pipeline on a document. Combines multiple processing steps (parse, extract, split) into a single call.",
+        "tags": ["Pipelines"],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/PipelineRequest" }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Pipeline result",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/PipelineResponse" }
+              }
+            }
+          },
+          "400": { "$ref": "#/components/responses/BadRequest" },
+          "401": { "$ref": "#/components/responses/Unauthorized" }
+        }
+      }
+    },
+    "/pipeline_async": {
+      "post": {
+        "summary": "Run Pipeline (Async)",
+        "operationId": "pipeline_async",
+        "description": "Asynchronously execute a pipeline. Returns a job_id for polling.",
+        "tags": ["Pipelines"],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/AsyncPipelineRequest" }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Job created",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/AsyncJobResponse" }
+              }
+            }
+          },
+          "401": { "$ref": "#/components/responses/Unauthorized" }
+        }
+      }
+    },
+    "/upload": {
+      "post": {
+        "summary": "Upload File",
+        "operationId": "upload",
+        "description": "Upload a document file. Returns an aifano:// file reference for use in parse, extract, split, and edit calls.",
+        "tags": ["Files & Jobs"],
         "parameters": [
           {
-            "name": "limit",
+            "name": "extension",
             "in": "query",
-            "description": "The maximum number of results to return",
-            "schema": {
-              "type": "integer",
-              "format": "int32"
+            "required": false,
+            "schema": { "type": "string" },
+            "description": "Force a specific file extension (e.g. `.png`)."
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "file": {
+                    "type": "string",
+                    "format": "binary",
+                    "description": "The document file to upload."
+                  }
+                },
+                "required": ["file"]
+              }
             }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "File uploaded",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/UploadResponse" }
+              }
+            }
+          },
+          "400": { "$ref": "#/components/responses/BadRequest" },
+          "401": { "$ref": "#/components/responses/Unauthorized" }
+        }
+      }
+    },
+    "/job/{job_id}": {
+      "get": {
+        "summary": "Get Job",
+        "operationId": "get_job",
+        "description": "Retrieve the status and result of an async job. Poll this endpoint until the job status is `completed` or `failed`.",
+        "tags": ["Files & Jobs"],
+        "parameters": [
+          {
+            "name": "job_id",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "string" },
+            "description": "The job ID returned from an async endpoint."
           }
         ],
         "responses": {
           "200": {
-            "description": "Plant response",
+            "description": "Job status and result",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/JobResponse" }
+              }
+            }
+          },
+          "401": { "$ref": "#/components/responses/Unauthorized" },
+          "404": {
+            "description": "Job not found",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ErrorResponse" }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/jobs": {
+      "get": {
+        "summary": "List Jobs",
+        "operationId": "list_jobs",
+        "description": "List all jobs for the authenticated organization.",
+        "tags": ["Files & Jobs"],
+        "responses": {
+          "200": {
+            "description": "List of jobs",
             "content": {
               "application/json": {
                 "schema": {
                   "type": "array",
-                  "items": {
-                    "$ref": "#/components/schemas/Plant"
+                  "items": { "$ref": "#/components/schemas/JobResponse" }
+                }
+              }
+            }
+          },
+          "401": { "$ref": "#/components/responses/Unauthorized" }
+        }
+      }
+    },
+    "/cancel/{job_id}": {
+      "post": {
+        "summary": "Cancel Job",
+        "operationId": "cancel_job",
+        "description": "Cancel a running async job.",
+        "tags": ["Files & Jobs"],
+        "parameters": [
+          {
+            "name": "job_id",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "string" },
+            "description": "The job ID to cancel."
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Job cancelled",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "status": { "type": "string", "example": "cancelled" }
                   }
                 }
               }
             }
           },
-          "400": {
-            "description": "Unexpected error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/Error"
-                }
-              }
-            }
-          }
-        }
-      },
-      "post": {
-        "description": "Creates a new plant in the store",
-        "requestBody": {
-          "description": "Plant to add to the store",
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/NewPlant"
-              }
-            }
-          },
-          "required": true
-        },
-        "responses": {
-          "200": {
-            "description": "plant response",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/Plant"
-                }
-              }
-            }
-          },
-          "400": {
-            "description": "unexpected error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/Error"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/plants/{id}": {
-      "delete": {
-        "description": "Deletes a single plant based on the ID supplied",
-        "parameters": [
-          {
-            "name": "id",
-            "in": "path",
-            "description": "ID of plant to delete",
-            "required": true,
-            "schema": {
-              "type": "integer",
-              "format": "int64"
-            }
-          }
-        ],
-        "responses": {
-          "204": {
-            "description": "Plant deleted",
-            "content": {}
-          },
-          "400": {
-            "description": "unexpected error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/Error"
-                }
-              }
-            }
-          }
-        }
-      }
-    }
-  },
-  "webhooks": {
-    "/plant/webhook": {
-      "post": {
-        "description": "Information about a new plant added to the store",
-        "requestBody": {
-          "description": "Plant added to the store",
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/NewPlant"
-              }
-            }
-          }
-        },
-        "responses": {
-          "200": {
-            "description": "Return a 200 status to indicate that the data was received successfully"
+          "401": { "$ref": "#/components/responses/Unauthorized" },
+          "404": {
+            "description": "Job not found"
           }
         }
       }
     }
   },
   "components": {
-    "schemas": {
-      "Plant": {
-        "required": [
-          "name"
-        ],
-        "type": "object",
-        "properties": {
-          "name": {
-            "description": "The name of the plant",
-            "type": "string"
-          },
-          "tag": {
-            "description": "Tag to specify the type",
-            "type": "string"
+    "securitySchemes": {
+      "BearerAuth": {
+        "type": "http",
+        "scheme": "bearer",
+        "description": "API key authentication. Use your Aifano API key (starts with `ak_live_`) as the Bearer token."
+      }
+    },
+    "responses": {
+      "BadRequest": {
+        "description": "Bad request",
+        "content": {
+          "application/json": {
+            "schema": { "$ref": "#/components/schemas/ErrorResponse" }
           }
         }
       },
-      "NewPlant": {
-        "allOf": [
-          {
-            "$ref": "#/components/schemas/Plant"
-          },
-          {
-            "required": [
-              "id"
-            ],
-            "type": "object",
-            "properties": {
-              "id": {
-                "description": "Identification number of the plant",
-                "type": "integer",
-                "format": "int64"
-              }
-            }
+      "Unauthorized": {
+        "description": "Unauthorized - invalid or missing API key",
+        "content": {
+          "application/json": {
+            "schema": { "$ref": "#/components/schemas/ErrorResponse" }
           }
-        ]
+        }
       },
-      "Error": {
-        "required": [
-          "error",
-          "message"
-        ],
-        "type": "object",
-        "properties": {
-          "error": {
-            "type": "integer",
-            "format": "int32"
-          },
-          "message": {
-            "type": "string"
+      "ValidationError": {
+        "description": "Validation error",
+        "content": {
+          "application/json": {
+            "schema": { "$ref": "#/components/schemas/ValidationErrorResponse" }
+          }
+        }
+      },
+      "InternalError": {
+        "description": "Internal server error",
+        "content": {
+          "application/json": {
+            "schema": { "$ref": "#/components/schemas/ErrorResponse" }
           }
         }
       }
     },
-    "securitySchemes": {
-      "bearerAuth": {
-        "type": "http",
-        "scheme": "bearer"
+    "schemas": {
+      "DocumentInput": {
+        "description": "The document to process. Accepts: (1) a public URL, (2) a presigned S3 URL, (3) an `aifano://file_id` from /upload, or (4) a `jobid://job_id` from a previous /parse call.",
+        "oneOf": [
+          { "type": "string", "description": "URL or aifano:// reference" },
+          { "$ref": "#/components/schemas/UploadResponse" }
+        ]
+      },
+      "ParseRequest": {
+        "type": "object",
+        "required": ["input"],
+        "properties": {
+          "input": { "$ref": "#/components/schemas/DocumentInput" },
+          "enhance": { "$ref": "#/components/schemas/Enhance" },
+          "retrieval": { "$ref": "#/components/schemas/Retrieval" },
+          "formatting": { "$ref": "#/components/schemas/Formatting" },
+          "spreadsheet": { "$ref": "#/components/schemas/Spreadsheet" },
+          "settings": { "$ref": "#/components/schemas/Settings" }
+        }
+      },
+      "AsyncParseRequest": {
+        "type": "object",
+        "required": ["input"],
+        "properties": {
+          "input": { "$ref": "#/components/schemas/DocumentInput" },
+          "async": { "$ref": "#/components/schemas/AsyncConfig" },
+          "enhance": { "$ref": "#/components/schemas/Enhance" },
+          "retrieval": { "$ref": "#/components/schemas/Retrieval" },
+          "formatting": { "$ref": "#/components/schemas/Formatting" },
+          "spreadsheet": { "$ref": "#/components/schemas/Spreadsheet" },
+          "settings": { "$ref": "#/components/schemas/Settings" }
+        }
+      },
+      "ExtractRequest": {
+        "type": "object",
+        "required": ["input", "schema"],
+        "properties": {
+          "input": { "$ref": "#/components/schemas/DocumentInput" },
+          "schema": {
+            "type": "object",
+            "description": "JSON Schema defining the data to extract from the document."
+          },
+          "system_prompt": {
+            "type": "string",
+            "description": "Custom system prompt for the extraction model."
+          },
+          "parsing": { "$ref": "#/components/schemas/ParseOptions" }
+        }
+      },
+      "AsyncExtractRequest": {
+        "type": "object",
+        "required": ["input", "schema"],
+        "properties": {
+          "input": { "$ref": "#/components/schemas/DocumentInput" },
+          "schema": { "type": "object" },
+          "system_prompt": { "type": "string" },
+          "async": { "$ref": "#/components/schemas/AsyncConfig" },
+          "parsing": { "$ref": "#/components/schemas/ParseOptions" }
+        }
+      },
+      "SplitRequest": {
+        "type": "object",
+        "required": ["input", "split_description"],
+        "properties": {
+          "input": { "$ref": "#/components/schemas/DocumentInput" },
+          "split_description": {
+            "type": "array",
+            "items": { "$ref": "#/components/schemas/SplitCategory" },
+            "description": "Categories to split the document into."
+          },
+          "split_rules": {
+            "type": "string",
+            "default": "Split the document into the applicable sections. Sections may only overlap at their first and last page if at all.",
+            "description": "Rules for how to split the document."
+          },
+          "parsing": { "$ref": "#/components/schemas/ParseOptions" },
+          "settings": { "$ref": "#/components/schemas/SplitSettings" }
+        }
+      },
+      "AsyncSplitRequest": {
+        "type": "object",
+        "required": ["input", "split_description"],
+        "properties": {
+          "input": { "$ref": "#/components/schemas/DocumentInput" },
+          "split_description": {
+            "type": "array",
+            "items": { "$ref": "#/components/schemas/SplitCategory" }
+          },
+          "split_rules": { "type": "string" },
+          "async": { "$ref": "#/components/schemas/AsyncConfig" },
+          "parsing": { "$ref": "#/components/schemas/ParseOptions" }
+        }
+      },
+      "EditRequest": {
+        "type": "object",
+        "required": ["document_url", "edit_instructions"],
+        "properties": {
+          "document_url": {
+            "type": "string",
+            "description": "URL or aifano:// reference to the document to edit."
+          },
+          "edit_instructions": {
+            "type": "string",
+            "description": "Natural language instructions for editing the document."
+          }
+        }
+      },
+      "AsyncEditRequest": {
+        "type": "object",
+        "required": ["document_url", "edit_instructions"],
+        "properties": {
+          "document_url": { "type": "string" },
+          "edit_instructions": { "type": "string" },
+          "async": { "$ref": "#/components/schemas/AsyncConfig" }
+        }
+      },
+      "PipelineRequest": {
+        "type": "object",
+        "required": ["input", "pipeline_id"],
+        "properties": {
+          "input": { "$ref": "#/components/schemas/DocumentInput" },
+          "pipeline_id": {
+            "type": "string",
+            "description": "The ID of the pipeline to execute."
+          }
+        }
+      },
+      "AsyncPipelineRequest": {
+        "type": "object",
+        "required": ["input", "pipeline_id"],
+        "properties": {
+          "input": { "$ref": "#/components/schemas/DocumentInput" },
+          "pipeline_id": { "type": "string" },
+          "async": { "$ref": "#/components/schemas/AsyncConfig" }
+        }
+      },
+      "ParseResponse": {
+        "type": "object",
+        "required": ["job_id", "duration", "usage", "result"],
+        "properties": {
+          "job_id": { "type": "string", "description": "Unique job identifier." },
+          "duration": { "type": "number", "description": "Processing time in seconds." },
+          "usage": { "$ref": "#/components/schemas/Usage" },
+          "result": {
+            "description": "Parse result — either inline (full) or as a URL for large responses.",
+            "oneOf": [
+              { "$ref": "#/components/schemas/FullResult" },
+              { "$ref": "#/components/schemas/UrlResult" }
+            ]
+          }
+        }
+      },
+      "ExtractResponse": {
+        "type": "object",
+        "required": ["job_id", "result"],
+        "properties": {
+          "job_id": { "type": "string" },
+          "duration": { "type": "number" },
+          "usage": { "$ref": "#/components/schemas/Usage" },
+          "result": {
+            "type": "object",
+            "description": "Extracted data matching the provided schema."
+          }
+        }
+      },
+      "SplitResponse": {
+        "type": "object",
+        "required": ["job_id", "result"],
+        "properties": {
+          "job_id": { "type": "string" },
+          "duration": { "type": "number" },
+          "usage": { "$ref": "#/components/schemas/Usage" },
+          "result": {
+            "type": "array",
+            "items": { "$ref": "#/components/schemas/SplitResult" }
+          }
+        }
+      },
+      "EditResponse": {
+        "type": "object",
+        "properties": {
+          "job_id": { "type": "string" },
+          "duration": { "type": "number" },
+          "usage": { "$ref": "#/components/schemas/Usage" },
+          "result": { "type": "object" }
+        }
+      },
+      "PipelineResponse": {
+        "type": "object",
+        "properties": {
+          "job_id": { "type": "string" },
+          "duration": { "type": "number" },
+          "usage": { "$ref": "#/components/schemas/Usage" },
+          "result": { "type": "object" }
+        }
+      },
+      "AsyncJobResponse": {
+        "type": "object",
+        "required": ["job_id"],
+        "properties": {
+          "job_id": {
+            "type": "string",
+            "description": "Job ID for polling via GET /job/{job_id}."
+          }
+        }
+      },
+      "JobResponse": {
+        "type": "object",
+        "properties": {
+          "job_id": { "type": "string" },
+          "status": {
+            "type": "string",
+            "enum": ["pending", "running", "completed", "failed", "cancelled"],
+            "description": "Current job status."
+          },
+          "result": {
+            "type": "object",
+            "description": "Job result (available when status is `completed`)."
+          },
+          "duration": { "type": "number" },
+          "usage": { "$ref": "#/components/schemas/Usage" }
+        }
+      },
+      "UploadResponse": {
+        "type": "object",
+        "required": ["file_id"],
+        "properties": {
+          "file_id": {
+            "type": "string",
+            "description": "File reference in `aifano://file_id` format."
+          },
+          "presigned_url": {
+            "type": "string",
+            "nullable": true,
+            "description": "Presigned URL for direct access."
+          }
+        }
+      },
+      "Usage": {
+        "type": "object",
+        "properties": {
+          "num_pages": { "type": "integer", "description": "Number of pages processed." },
+          "credits": { "type": "number", "nullable": true, "description": "Credits consumed." }
+        }
+      },
+      "FullResult": {
+        "type": "object",
+        "required": ["type", "chunks"],
+        "properties": {
+          "type": { "type": "string", "enum": ["full"] },
+          "chunks": {
+            "type": "array",
+            "items": { "$ref": "#/components/schemas/Chunk" }
+          }
+        }
+      },
+      "UrlResult": {
+        "type": "object",
+        "required": ["type", "url", "result_id"],
+        "properties": {
+          "type": { "type": "string", "enum": ["url"] },
+          "url": { "type": "string", "description": "Presigned URL to download the full result." },
+          "result_id": { "type": "string" }
+        }
+      },
+      "Chunk": {
+        "type": "object",
+        "required": ["content", "embed", "blocks"],
+        "properties": {
+          "content": { "type": "string", "description": "Extracted text content." },
+          "embed": { "type": "string", "description": "Content optimized for embedding/retrieval." },
+          "enriched": { "type": "string", "nullable": true },
+          "blocks": {
+            "type": "array",
+            "items": { "$ref": "#/components/schemas/Block" }
+          }
+        }
+      },
+      "Block": {
+        "type": "object",
+        "required": ["type", "bbox", "content"],
+        "properties": {
+          "type": {
+            "type": "string",
+            "enum": ["Header", "Footer", "Title", "Section Header", "Page Number", "List Item", "Figure", "Table", "Key Value", "Text", "Comment", "Signature"]
+          },
+          "bbox": { "$ref": "#/components/schemas/BoundingBox" },
+          "content": { "type": "string" },
+          "confidence": { "type": "string", "enum": ["low", "high"], "nullable": true }
+        }
+      },
+      "BoundingBox": {
+        "type": "object",
+        "required": ["left", "top", "width", "height", "page"],
+        "properties": {
+          "left": { "type": "number" },
+          "top": { "type": "number" },
+          "width": { "type": "number" },
+          "height": { "type": "number" },
+          "page": { "type": "integer", "description": "Page number (1-indexed)." }
+        }
+      },
+      "SplitCategory": {
+        "type": "object",
+        "required": ["title", "description"],
+        "properties": {
+          "title": { "type": "string", "description": "Category name." },
+          "description": { "type": "string", "description": "Description of what this section contains." }
+        }
+      },
+      "SplitResult": {
+        "type": "object",
+        "properties": {
+          "category": { "type": "string" },
+          "page_range": {
+            "type": "object",
+            "properties": {
+              "start": { "type": "integer" },
+              "end": { "type": "integer" }
+            }
+          },
+          "content": { "type": "string" }
+        }
+      },
+      "SplitSettings": {
+        "type": "object",
+        "properties": {
+          "table_cutoff": {
+            "type": "string",
+            "enum": ["truncate", "split"],
+            "default": "truncate"
+          }
+        }
+      },
+      "Enhance": {
+        "type": "object",
+        "properties": {
+          "agentic": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "scope": { "type": "string", "enum": ["table", "figure", "text"] },
+                "prompt": { "type": "string", "nullable": true }
+              },
+              "required": ["scope"]
+            },
+            "default": [],
+            "description": "Use vision language models to enhance accuracy for specific block types."
+          },
+          "summarize_figures": {
+            "type": "boolean",
+            "default": true,
+            "description": "Summarize figures using a vision model."
+          }
+        }
+      },
+      "Retrieval": {
+        "type": "object",
+        "properties": {
+          "chunking": {
+            "type": "object",
+            "properties": {
+              "chunk_mode": {
+                "type": "string",
+                "enum": ["variable", "section", "page", "disabled", "block", "page_sections"],
+                "default": "disabled"
+              },
+              "chunk_size": { "type": "integer", "nullable": true }
+            }
+          },
+          "filter_blocks": {
+            "type": "array",
+            "items": { "type": "string" },
+            "default": []
+          },
+          "embedding_optimized": {
+            "type": "boolean",
+            "default": false
+          }
+        }
+      },
+      "Formatting": {
+        "type": "object",
+        "properties": {
+          "add_page_markers": { "type": "boolean", "default": false },
+          "table_output_format": {
+            "type": "string",
+            "enum": ["html", "json", "md", "jsonbbox", "dynamic", "csv"],
+            "default": "dynamic"
+          },
+          "merge_tables": { "type": "boolean", "default": false },
+          "include": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "enum": ["change_tracking", "highlight", "comments", "hyperlinks", "signatures"]
+            },
+            "default": []
+          }
+        }
+      },
+      "Spreadsheet": {
+        "type": "object",
+        "properties": {
+          "split_large_tables": {
+            "type": "object",
+            "properties": {
+              "enabled": { "type": "boolean", "default": true },
+              "size": { "type": "integer", "default": 50 }
+            }
+          },
+          "clustering": {
+            "type": "string",
+            "enum": ["accurate", "fast", "disabled"],
+            "default": "accurate"
+          }
+        }
+      },
+      "Settings": {
+        "type": "object",
+        "properties": {
+          "ocr_system": {
+            "type": "string",
+            "enum": ["standard", "legacy"],
+            "default": "standard",
+            "description": "Standard is the best multilingual OCR. Legacy supports only Germanic languages."
+          },
+          "extraction_mode": {
+            "type": "string",
+            "enum": ["ocr", "hybrid"],
+            "default": "hybrid",
+            "description": "Hybrid combines OCR with embedded PDF text for best accuracy."
+          },
+          "force_url_result": { "type": "boolean", "default": false },
+          "return_ocr_data": { "type": "boolean", "default": false },
+          "return_images": {
+            "type": "array",
+            "items": { "type": "string", "enum": ["figure", "table"] },
+            "default": []
+          },
+          "page_range": {
+            "type": "object",
+            "nullable": true,
+            "properties": {
+              "start": { "type": "integer" },
+              "end": { "type": "integer" }
+            }
+          },
+          "timeout": { "type": "number", "nullable": true },
+          "document_password": { "type": "string", "nullable": true }
+        }
+      },
+      "ParseOptions": {
+        "type": "object",
+        "description": "Configuration for the parsing step. Ignored when using jobid:// input.",
+        "properties": {
+          "enhance": { "$ref": "#/components/schemas/Enhance" },
+          "retrieval": { "$ref": "#/components/schemas/Retrieval" },
+          "formatting": { "$ref": "#/components/schemas/Formatting" },
+          "spreadsheet": { "$ref": "#/components/schemas/Spreadsheet" },
+          "settings": { "$ref": "#/components/schemas/Settings" }
+        }
+      },
+      "AsyncConfig": {
+        "type": "object",
+        "properties": {
+          "priority": {
+            "type": "boolean",
+            "default": false,
+            "description": "Process with priority if budget is available."
+          },
+          "webhook": {
+            "type": "object",
+            "nullable": true,
+            "description": "Webhook configuration for job completion notifications.",
+            "properties": {
+              "mode": { "type": "string", "enum": ["svix", "direct"] },
+              "url": { "type": "string", "description": "Webhook URL (required for direct mode)." }
+            }
+          },
+          "metadata": {
+            "description": "Custom JSON metadata included in webhook payloads."
+          }
+        }
+      },
+      "ErrorResponse": {
+        "type": "object",
+        "properties": {
+          "error": { "type": "string", "description": "Error message." }
+        }
+      },
+      "ValidationErrorResponse": {
+        "type": "object",
+        "properties": {
+          "detail": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "loc": { "type": "array", "items": {} },
+                "msg": { "type": "string" },
+                "type": { "type": "string" }
+              }
+            }
+          }
+        }
       }
     }
   }

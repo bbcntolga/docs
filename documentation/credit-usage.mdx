@@ -1,0 +1,103 @@
+---
+title: "Credit Usage"
+description: "Understand how credits are consumed across Aifano endpoints and how to monitor your usage."
+---
+
+## Overview
+
+Aifano uses a credit-based billing system. Credits are consumed per page processed, with different rates depending on the operation. Free operations like file uploads and job status checks cost zero credits.
+
+## Credit Pricing
+
+| Operation | Credits per Page | Description |
+|-----------|-----------------|-------------|
+| **Parse** | 1 | Document parsing into structured JSON |
+| **Extract** | 2 | Structured data extraction with schema |
+| **Split** | 1 | Document splitting into sections |
+| **Edit** | 1 | Document editing and form filling |
+| **Pipeline** | 2 | Pipeline execution (varies by processors) |
+| **Upload** | 0 | File upload to Aifano storage |
+| **Job Status** | 0 | Checking async job status |
+| **Cancel Job** | 0 | Cancelling a running job |
+
+<Note>
+  Credits are calculated based on the number of pages in the document. A 10-page PDF processed with `/extract` costs 20 credits (10 pages × 2 credits).
+</Note>
+
+## How Credits Are Calculated
+
+Credits are charged **after** processing completes. The formula is:
+
+```
+credits = num_pages × credits_per_page
+```
+
+For example:
+- Parsing a 5-page PDF: `5 × 1 = 5 credits`
+- Extracting from a 10-page PDF: `10 × 2 = 20 credits`
+- Splitting a 25-page document: `25 × 1 = 25 credits`
+
+## Usage in Responses
+
+Every API response includes a `usage` object showing credits consumed:
+
+```json
+{
+  "job_id": "job_abc123",
+  "duration": 2.34,
+  "usage": {
+    "num_pages": 5,
+    "credits": 5
+  },
+  "result": { ... }
+}
+```
+
+## Monthly Credit Limits
+
+Each organization has a monthly credit limit. When the limit is reached, API requests return a `429` error:
+
+```json
+{
+  "error": "Credit limit reached. You have used 1000 of 1000 credits this month. Please upgrade your plan or wait until next month.",
+  "code": "CREDIT_LIMIT_EXCEEDED",
+  "credits_used": 1000,
+  "credit_limit": 1000
+}
+```
+
+## Monitoring Usage
+
+### Via Studio
+
+Track your credit usage in real-time through the [Aifano Studio](https://studio.aifano.com):
+
+1. Navigate to **Credits** in the sidebar
+2. View your current usage, remaining credits, and usage history
+3. See a breakdown by operation type and endpoint
+
+### Via API Response Headers
+
+Each API response includes usage information in the response body. Track the `usage.credits` field to monitor consumption programmatically.
+
+## Tips to Optimize Credit Usage
+
+<AccordionGroup>
+  <Accordion title="Use jobid:// references to avoid re-parsing">
+    If you've already parsed a document and want to extract different data, use `jobid://job_id` as input. This skips the parsing step and saves credits.
+  </Accordion>
+  <Accordion title="Use async for large documents">
+    Async endpoints don't cost more credits, but they prevent timeouts on large documents — ensuring you don't waste credits on failed requests.
+  </Accordion>
+  <Accordion title="Batch similar operations">
+    Use pipelines to combine parse + extract in a single call. This is more efficient than calling each endpoint separately.
+  </Accordion>
+  <Accordion title="Test with small documents first">
+    Before processing large batches, test your configuration with a single small document to verify the output matches your expectations.
+  </Accordion>
+</AccordionGroup>
+
+## Failed Requests
+
+Credits are **not** charged for failed requests. If a request returns an error (4xx or 5xx status code), no credits are deducted from your account.
+
