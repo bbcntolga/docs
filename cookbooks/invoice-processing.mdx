@@ -120,7 +120,7 @@ result = requests.post(
 print(json.dumps(result["result"], indent=2))
 ```
 
-````javascript JavaScript
+```javascript JavaScript
 const AIFANO_API_KEY = "ak_live_your_key_here";
 const BASE_URL = "https://platform.aifano.com";
 
@@ -149,6 +149,47 @@ const schema = {
       }
     },
     subtotal: { type: "number" },
+    tax: { type: "number" },
+    total: { type: "number" },
+    currency: { type: "string" }
+  }
+};
+
+const result = await fetch(`${BASE_URL}/extract`, {
+  method: "POST",
+  headers: {
+    "Authorization": `Bearer ${AIFANO_API_KEY}`,
+    "Content-Type": "application/json"
+  },
+  body: JSON.stringify({
+    input: "https://example.com/invoice.pdf",
+    schema: schema,
+    system_prompt: "Extract all invoice data. Use YYYY-MM-DD for dates."
+  })
+}).then(r => r.json());
+
+console.log(JSON.stringify(result.result, null, 2));
+```
+
+```bash cURL
+curl -X POST "https://platform.aifano.com/extract" \
+  -H "Authorization: Bearer ak_live_your_key_here" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "input": "https://example.com/invoice.pdf",
+    "schema": {
+      "type": "object",
+      "properties": {
+        "invoice_number": {"type": "string"},
+        "vendor": {"type": "object"},
+        "line_items": {"type": "array"},
+        "total": {"type": "number"}
+      }
+    }
+  }'
+```
+
+</CodeGroup>
 
 ## Step 4: Batch Processing Multiple Invoices
 

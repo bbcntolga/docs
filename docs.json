@@ -16,9 +16,18 @@
           {
             "group": "Get Started",
             "pages": [
-              "documentation/overview",
-              "documentation/quickstart",
-              "documentation/authentication"
+              {
+                "page": "documentation/overview",
+                "icon": "book"
+              },
+              {
+                "page": "documentation/quickstart",
+                "icon": "rocket"
+              },
+              {
+                "page": "documentation/authentication",
+                "icon": "lock"
+              }
             ]
           },
           {
@@ -55,9 +64,7 @@
         "groups": [
           {
             "group": "API Reference",
-            "pages": [
-              "api-reference/introduction"
-            ]
+            "pages": ["api-reference/introduction"]
           },
           {
             "group": "Document Processing",
@@ -74,10 +81,7 @@
           },
           {
             "group": "Pipelines",
-            "pages": [
-              "POST /pipeline",
-              "POST /pipeline_async"
-            ]
+            "pages": ["POST /pipeline", "POST /pipeline_async"]
           },
           {
             "group": "Files & Jobs",
