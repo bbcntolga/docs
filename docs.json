@@ -15,19 +15,11 @@
         "groups": [
           {
             "group": "Get Started",
+            "icon": "rocket",
             "pages": [
-              {
-                "page": "documentation/overview",
-                "icon": "book"
-              },
-              {
-                "page": "documentation/quickstart",
-                "icon": "rocket"
-              },
-              {
-                "page": "documentation/authentication",
-                "icon": "lock"
-              }
+              "documentation/overview",
+              "documentation/quickstart",
+              "documentation/authentication"
             ]
           },
           {
